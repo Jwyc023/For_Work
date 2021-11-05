@@ -467,9 +467,7 @@ https://www.cnblogs.com/justForMe/archive/2010/09/16/1828009.html（比喻）
 # 1.8 关键类
 ## ThreadLocal（线程局部变量)
 
-https://blog.csdn.net/nanhuaibeian/article/details/112498514（举例）
-
-https://blog.csdn.net/gufuguang/article/details/11920487（解释、待看）
+https://blog.csdn.net/weixin_44050144/article/details/113061884
 
 ThreadLocal通常都定义为static，ThreadLocal没有存储功能，变量副本的真实存储位置是Thread对象的threadLocals这个ThreadLocal.ThreadLocalMap变量中，可以将ThreadLocal理解为一个工具类，用来保证线程本地变量的存储和存储碰撞。
 
