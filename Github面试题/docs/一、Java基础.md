@@ -534,6 +534,9 @@ ThreadLocalMap getMap(Thread t) {
 - 如果是强引用，ThreadLocal将无法被释放内存。
 - 因为如果这里使用普通的key-value形式来定义存储结构，实质上就会造成节点的生命周期与线程强绑定，只要线程没有销毁，那么节点在GC分析中一直处于可达状态，没办法被回收，而程序本身也无法判断是否可以清理节点。弱引用是Java中四档引用的第三档，比软引用更加弱一些，如果一个对象没有强引用链可达，那么一般活不过下一次GC。当某个ThreadLocal已经没有强引用可达，则随着它被垃圾回收，在ThreadLocalMap里对应的Entry的键值会失效，这为ThreadLocalMap本身的垃圾清理提供了便利。
 ### 3)ThreadLocalMap是何时初始化的（setInitialValue)
+
+这一段有点问题，不理。
+
 - 在get时最后一行调用了setInitialValue，它又调用了我们自己重写的initialValue方法获得要线程局部变量对象。ThreadLocalMap没有被初始化的话，便初始化，并设置firstKey和firstValue；如果已经被初始化，那么将key和value放入map。
 
 ```
@@ -596,13 +599,12 @@ private Entry getEntry(ThreadLocal<?> key) {
     if (e != null && e.get() == key)
         return e;
     else
+    // 因为用的是线性探测，所以往后找还是有可能能够找到目标Entry的。
+    	return getEntryAfterMiss(key, i, e);
+}
 ```
 
-- // 因为用的是线性探测，所以往后找还是有可能能够找到目标Entry的。
-        return getEntryAfterMiss(key, i, e);
-    }
-
-
+线性探测：解决hash冲突的一种办法，如果计算出来的位置已经有元素，则一个一个向后找，有点笨。
 
 ```
 private Entry getEntryAfterMiss(ThreadLocal<?> key, int i, Entry e) {
@@ -614,17 +616,17 @@ private Entry getEntryAfterMiss(ThreadLocal<?> key, int i, Entry e) {
         if (k == key)
             return e;
         if (k == null)
+        	// 该entry对应的ThreadLocal已经被回收，调用expungeStaleEntry来清理无效的entry            
+        	expungeStaleEntry(i);
+      else
+          	i = nextIndex(i, len);
+          	e = tab[i];
+  	}
+  	return null;
+  }
 ```
 
-- // 该entry对应的ThreadLocal已经被回收，调用expungeStaleEntry来清理无效的entry            
-- expungeStaleEntry(i);
-        else
-            i = nextIndex(i, len);
-        e = tab[i];
-    }
-    return null;
-    }
-
+- 
 - i是位置
 - 从staleSlot开始遍历，将无效key（弱引用指向对象被回收)清理，即对应entry中的value置为null，将指向这个entry的table[i]置为null，直到扫到空entry。
 - 另外，在过程中还会对非空的entry作rehash。
@@ -881,221 +883,16 @@ public void clear() {
 
 ```
 JDK建议将ThreadLocal变量定义成private static的，这样的话ThreadLocal的生命周期就更长，由于一直存在ThreadLocal的强引用，所以ThreadLocal也就不会被回收，也就能保证任何时候都能根据ThreadLocal的弱引用访问到Entry的value值，然后remove它，防止内存泄露。
-```
-
-- 
-
-## Iterator / ListIterator / Iterable
-- 普通for循环时不能删除元素，否则会抛出异常；Iterator可以
-
-
-```
-public interface Collection<E> extends Iterable<E> {}
-```
-
-- Collection接口继承了Iterable，Iterable接口定义了iterator抽象方法和forEach default方法。所以ArrayList、LinkedList都可以使用迭代器和forEach，包括增强for循环（编译时转为迭代器)。
-
-
-```
-public interface Iterable<T> {
-    Iterator<T> iterator();
-    default void forEach(Consumer<? super T> action) {
-        Objects.requireNonNull(action);
-        for (T t : this) {
-            action.accept(t);
-        }
-    }
-```
-
-- default Spliterator<T> spliterator() {
-        return Spliterators.spliteratorUnknownSize(iterator(), 0);
-    }  
-- }
-
-- 
-
-- 注意这些具体的容器类返回的迭代器对象是各不相同的，主要是因为不同的容器遍历方式不同，但是这些迭代器对象都实现Iterator接口，都可以使用一个Iterator对象来统一指向这些不同的子类对象。
-- ArrayList#iterator
-
-```
-public Iterator<E> iterator() {
-    return new Itr();
-}
+这里的意思是，反正设置成弱引用也是会泄露的，那不如直接强引用保证能找到它们，到时候一起remove。
 ```
 
 
-- ArrayList#Itr
 
-```
-private class Itr implements Iterator<E> {
-    int cursor;       // index of next element to return
-    int lastRet = -1; // index of last element returned; -1 if no such
-    int expectedModCount = modCount;
+## Collection
 
-    public boolean hasNext() {
-        return cursor != size;
-    }
-
-    @SuppressWarnings("unchecked")
-    public E next() {
-        checkForComodification();
-        int i = cursor;
-        if (i >= size)
-            throw new NoSuchElementException();
-        Object[] elementData = ArrayList.this.elementData;
-        if (i >= elementData.length)
-            throw new ConcurrentModificationException();
-        cursor = i + 1;
-        return (E) elementData[lastRet = i];
-    }
-
-    public void remove() {
-        if (lastRet < 0)
-            throw new IllegalStateException();
-        checkForComodification();
-
-        try {
-            ArrayList.this.remove(lastRet);
-            cursor = lastRet;
-            lastRet = -1;
-            expectedModCount = modCount;
-        } catch (IndexOutOfBoundsException ex) {
-            throw new ConcurrentModificationException();
-        }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void forEachRemaining(Consumer<? super E> consumer) {
-        Objects.requireNonNull(consumer);
-        final int size = ArrayList.this.size;
-        int i = cursor;
-        if (i >= size) {
-            return;
-        }
-        final Object[] elementData = ArrayList.this.elementData;
-        if (i >= elementData.length) {
-            throw new ConcurrentModificationException();
-        }
-        while (i != size && modCount == expectedModCount) {
-            consumer.accept((E) elementData[i++]);
-        }
-        // update once at end of iteration to reduce heap write traffic
-        cursor = i;
-        lastRet = i - 1;
-        checkForComodification();
-    }
-
-    final void checkForComodification() {
-        if (modCount != expectedModCount)
-            throw new ConcurrentModificationException();
-    }
-}
-```
+- https://blog.csdn.net/u011240877/category_6447444.html（collection框架详解）
 
 
-- ArrayList#listIterator
-
-```
-public ListIterator<E> listIterator() {
-    return new ListItr(0);
-}
-```
-
-- ArrayList#ListItr
-
-```
-private class ListItr extends Itr implements ListIterator<E> {
-    ListItr(int index) {
-        super();
-        cursor = index;
-    }
-
-    public boolean hasPrevious() {
-        return cursor != 0;
-    }
-
-    public int nextIndex() {
-        return cursor;
-    }
-
-    public int previousIndex() {
-        return cursor - 1;
-    }
-
-    @SuppressWarnings("unchecked")
-    public E previous() {
-        checkForComodification();
-        int i = cursor - 1;
-        if (i < 0)
-            throw new NoSuchElementException();
-        Object[] elementData = ArrayList.this.elementData;
-        if (i >= elementData.length)
-            throw new ConcurrentModificationException();
-        cursor = i;
-        return (E) elementData[lastRet = i];
-    }
-
-    public void set(E e) {
-        if (lastRet < 0)
-            throw new IllegalStateException();
-        checkForComodification();
-
-        try {
-            ArrayList.this.set(lastRet, e);
-        } catch (IndexOutOfBoundsException ex) {
-            throw new ConcurrentModificationException();
-        }
-    }
-
-    public void add(E e) {
-        checkForComodification();
-
-        try {
-            int i = cursor;
-            ArrayList.this.add(i, e);
-            cursor = i + 1;
-            lastRet = -1;
-            expectedModCount = modCount;
-        } catch (IndexOutOfBoundsException ex) {
-            throw new ConcurrentModificationException();
-        }
-    }
-}
-```
-
-## for /增强for/ forEach
-For-each loop	Equivalent for loop
-for (type var : arr) {
-    body-of-loop
-}	for (int i = 0; i < arr.length; i++) { 
-    type var = arr[i];
-    body-of-loop
-}
-for (type var : coll) {
-    body-of-loop
-}	for (Iterator<type> iter = coll.iterator(); iter.hasNext(); ) {
-    type var = iter.next();
-    body-of-loop
-}
-- 增强for循环在编译时被修改为for循环：数组会被修改为下标式的循环；集合会被修改为Iterator循环。
-
-- 增强for循环不适合以下情况：（过滤、转换、平行迭代)
-- 对collection或数组中的元素不能做赋值操作；
-- 只能正向遍历，不能反向遍历；
-- 遍历过程中，collection或数组中同时只有一个元素可见，即只有“当前遍历到的元素”可见，而前一个或后一个元素是不可见的；
-
-- forEach
-- ArrayList#forEach继承自
-- Iterable接口的default方法
--     default void forEach(Consumer<? super T> action) {
-        Objects.requireNonNull(action);
-        for (T t : this) {
-            action.accept(t);
-        }
-    }
-
-- 
 
 ## Comparable与Comparator
 
