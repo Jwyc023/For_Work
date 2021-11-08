@@ -1041,6 +1041,8 @@ JDK建议将ThreadLocal变量定义成private static的，这样的话ThreadLoca
 
 3. **HashMap**
 
+   https://blog.csdn.net/samniwu/article/details/90550196（推荐这个）
+
    1. HashMap 的特殊存储结构使得在获取指定元素前需要经过哈希运算，得到目标元素在哈希表中的位置，然后再进行少量比较即可得到元素，这使得 HashMap 的查找效率贼高。
 
    2. 当发生 哈希冲突（碰撞）的时候，HashMap 采用 **拉链法** 进行解决（不熟悉 “哈希冲突” 和 “拉链法” 这 2 个概念的同学可以 [点这里了解](http://blog.csdn.net/u011240877/article/details/52940469)），因此 HashMap 的底层实现是 **数组+链表**
@@ -1060,12 +1062,16 @@ JDK建议将ThreadLocal变量定义成private static的，这样的话ThreadLoca
       默认初始容量：16，必须是 2 的整数次方。hashmap会选择最接近指定参数 cap 的 2 的 N 次方容量。假如你传入的是 5，返回的初始容量为 8 。
 
       默认加载因子的大小：0.75，可不是随便的，结合时间和空间效率考虑得到的。
-
+   
       加载因子过高，例如为1，虽然减少了空间开销，提高了空间利用率，但同时也增加了查询时间成本；
    
       加载因子过低，例如0.5，虽然可以减少查询时间成本，但是空间利用率很低，同时提高了rehash操作的次数。
    
-   9. 除了不允许 null 并且同步，Hashtable 几乎和他一样。
+   9. 为什么容量必须是2的幂：https://blog.csdn.net/u010841296/article/details/82832166
+   
+   10. 除了不允许 null 并且同步，Hashtable 几乎和他一样。
+   
+   11. 一个桶里的entry，他们的hash一定都是一样的吗
 
 
 
