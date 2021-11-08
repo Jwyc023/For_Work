@@ -890,7 +890,164 @@ JDK建议将ThreadLocal变量定义成private static的，这样的话ThreadLoca
 
 ## Collection
 
+![collection1](D:\学习用\找工作\For_Work\Github面试题\图片\collection1.png)
+
 - https://blog.csdn.net/u011240877/category_6447444.html（collection框架详解）
+- https://blog.csdn.net/qq_28306343（不只有collection）
+- https://blog.csdn.net/liudong220?t=1
+
+1. **Collection**
+
+   1. fail-fast
+   2. modcount
+
+2. **Iterator、ListIterator**
+
+   1. Iterator及ListIterator两个都是接口，接口是什么？**一套规范，没有标准实现（default方法除外）；**由实现类去实现他们。
+   2. Iterator规范的是如何查找下一个元素。
+       ListIterator则在Iterator的基础上，增加了索引的概念，增加了逆向查询方法。
+
+3. **List**
+
+4. **AbstractCollection**
+
+   https://blog.csdn.net/liudong220/article/details/105411754/?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_title~default-0.no_search_link&spm=1001.2101.3001.4242.1
+
+   1. 为什么里面的add要抛出异常UnsupportedOperationException而不是用抽象方法呢？因为程序员可能会选择实现一个不可修改的集合，如果要实现一个可修改的集合，就重写就行。有点像接口隔离原则：客户不要的方法不暴露给他。
+
+5. **ArrayList**
+
+   1. 线程不安全
+
+      https://blog.csdn.net/u012859681/article/details/78206494
+
+   2. ArrayList底层是由数组组成的，初始化是一个空数组（这个版本之间差异较大），容器最大容量为 Integer.MAX_VALUE - 8（2147483639）；
+      在jdk1.8以前，是默认数组大小为10的一个数组，1.8以后时第一次添加操作后扩容时改变大小；（如果添加元素数量小于10，数组大小则为10）；
+
+   3. 扩容时会先判断是否需要扩容，需要则扩1.5倍
+
+   4. 删除不缩容：个人认为这是因为每次删除都去调整大小是很浪费性能的表现，还不如把这种操作交给用户去判断何时操作；
+       假设当前操作是删除操作，下一次是增加操作；
+       如果我们在删除操作时进行了缩容操作，下一次增加的时候，我们又要进行扩容操作，这样非常浪费了性能。
+
+   5. Arrays的内部类ArrayList和java.util.ArrayList都是继承AbstractList，remove、add等方法AbstractList中是默认throw UnsupportedOperationException而且不作任何操作。java.util.ArrayList重新了这些方法，而Arrays的内部类ArrayList没有重写，所以会抛出异常。
+
+   6. ArrayList实现了一个叫做 `RandomAccess` 的接口，而 LinkedList 是没有的。RandomAccess 是一个标志接口，表明实现这个这个接口的 List 集合是支持快速随机访问的。也就是说，实现了这个接口的集合是支持 **快速随机访问** 策略的。
+
+      同时，官网还特意说明了，如果是实现了这个接口的 **List**，那么使用for循环的方式获取数据会优于用迭代器获取数据。
+
+6. **AbstractSequentialList**
+
+   1. AbstractSequentialList 继承自 AbstractList，是 LinkedList 的父类，是 List 接口 的简化版实现。
+
+      简化在哪儿呢？简化在 AbstractSequentialList 只支持按次序访问，而不像 AbstractList 那样支持随机访问。
+
+   2. 支持 RandomAccess 的对象，遍历时使用 get 比 迭代器更快。
+      而 AbstractSequentialList 只支持迭代器按顺序 访问，不支持 RandomAccess，所以遍历 AbstractSequentialList 的子类，使用 for 循环 get() 的效率要 <= 迭代器遍历。
+   3. get调用的是listiterator(index).next()
+
+7. **Queue**
+
+   1. 单队列“**假溢出**”
+   2. 循环队列中，rear = (rear - size) % size
+   3. 为了达到判断队列状态的目的，可以通过牺牲一个存储空间来实现。 放满标志 (rear - front) % size = 1
+   4. add、offer等的区别要搞清楚
+   5. Queue 是个接口，它提供的 add, offer 方法初衷是希望子类能够禁止添加元素为 null，这样可以避免在查询时返回 null 究竟是正确还是错误。
+      事实上大多数 Queue 的实现类的确响应了 Queue 接口的规定，比如 ArrayBlockingQueue，PriorityBlockingQueue 等等。
+      但还是有一些实现类没有这样要求，比如 LinkedList。
+   6. 虽然 LinkedList 没有禁止添加 null，但是一般情况下 Queue 的实现类都不允许添加 null 元素，为啥呢？因为 poll(), peek() 方法在异常的时候会返回 null，你添加了 null　以后，当获取时不好分辨究竟是否正确返回。
+   7. Queue 一般都是 FIFO 的，但是也有例外，比如优先队列 priority queue（它的顺序是根据自然排序或者自定义 comparator 的）；再比如 LIFO 的队列（跟栈一样，后来进去的先出去）。
+   8. 不论进入、出去的先后顺序是怎样的，使用 remove()，poll() 方法操作的都是 头部 的元素；而插入的位置则不一定是在队尾了，不同的 queue 会有不同的插入逻辑。
+
+8. **Deque**
+
+   1. 每个操作都有两种方法，一种在异常情况下直接抛出异常奔溃，另一种则不会抛异常，而是返回特殊的值，比如 false, null …
+
+      ![Deque1](D:\学习用\找工作\For_Work\Github面试题\图片\Deque1.png)
+
+   2. LinkedBlockingDeque 如果队列为空时，获取操作将会阻塞，直到有元素添加。
+   3. 在并发编程 中，双端队列 Deque 还用于 “工作密取” 模式。
+
+9. **Linkedlist**
+
+   1. 它既实现了List接口也实现了Deque接口，所以既可以用List声明也可以用Deque声明，即是说存在多种向上转型。用一个接口声明的变量无法使用另一个接口有而这个接口没有的方法，而且自己类里特有的也不行，除非用类声明。
+
+      https://dongshuo.blog.csdn.net/article/details/77145673?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control
+
+   2. linkedList 和 ArrayList 一样，不是同步容器。所以需要外部做同步操作，或者直接用 `Collections.synchronizedList` 方法包一下，最好在创建时就包一下。
+
+   3. 查找时并不是所有指定位置都是从头部开始的，这个得看下标参数的大小，有的则从尾部开始遍历的。
+
+10. **Vector**
+
+    1. Vector 和 ArrayList 一样，都是继承自AbstractList。它是 Stack 的父类。
+    2. 底层也是个数组
+    3. 扩容时会扩大 2 倍，而不是 1.5。默认10。
+    4. Vector 通过 capacity (容量) 和 capacityIncrement (增长数量) 来尽量少的占用空间
+    5. 通过 iterator 和 lastIterator 获得的迭代器是 fail-fast 的
+    6. 同步类，每个方法前都有同步锁 synchronized
+
+11. **Stack**
+
+    1. 有 5 种创建 Stack 的方法
+    2. 采用数组实现
+    3. 除了 push()，剩下的方法都是同步的
+
+## Map
+
+![map2](D:\学习用\找工作\For_Work\Github面试题\图片\map2.png)
+
+1. **Map**
+   1. Map 中元素的顺序取决于迭代器迭代时的顺序，有的实现类保证了元素输入输出时的顺序，比如说 TreeMap；有的实现类则是无序的，比如 HashMap。
+   2. KeySet 是一个 Map 中键（key）的集合，**以 Set 的形式保存**，不允许重复，因此键存储的对象需要重写 equals() 和 hashCode() 方法。
+   3. Values 是一个 Map 中值 (value) 的集合，**以 Collection 的形式保存**，因此可以重复。
+   4. 通过 Map.entrySet() 方法获得的是一组 Entry 的集合，保存在 Set 中，所以 Map 中的 Entry 也不能重复。
+   5. 每个 key 只能对应一个 value, 多个 key 可以对应一个 value。
+   6. key, value 都可以是任何引用类型的数据，包括 null。
+
+2. **AbstractMap**
+
+   1. 当我们要实现一个 不可变的 Map 时，只需要继承这个类，然后实现 entrySet() 方法，这个方法返回一个保存所有 key-value 映射的 set。 通常这个 Set 不支持 add(), remove() 方法，Set 对应的迭代器也不支持 remove() 方法。
+
+      如果想要实现一个 可变的 Map,我们需要在上述操作外，重写 put() 方法，因为 默认不支持 put 操作（unsupportedOperationException）。而且 entrySet() 返回的 Set 的迭代器，也得实现 remove() 方法，因为 AbstractMap 中的 删除相关操作都需要调用该迭代器的 remove() 方法。
+
+   2. 正如其他集合推荐的那样，比如 [AbstractCollection 接口](http://blog.csdn.net/u011240877/article/details/52829912) ，实现类最好提供两种构造方法：
+
+      - 一种是不含参数的，返回一个空 map
+      - 一种是以一个 map 为参数，返回一个和参数内容一样的 map。
+
+   3. 有两个成员变量：
+
+          keySet, 保存 map 中所有键的 Set
+          values, 保存 map 中所有值的集合
+
+      他们都是 transient, volatile, 分别表示不可序列化、并发环境下变量的修改能够保证线程可见性。
+
+      需要注意的是 volatile 只能保证可见性，不能保证原子性，需要保证操作是原子性操作，才能保证使用 volatile 关键字的程序在并发时能够正确执行。
+
+3. **HashMap**
+
+   1. HashMap 的特殊存储结构使得在获取指定元素前需要经过哈希运算，得到目标元素在哈希表中的位置，然后再进行少量比较即可得到元素，这使得 HashMap 的查找效率贼高。
+
+   2. 当发生 哈希冲突（碰撞）的时候，HashMap 采用 **拉链法** 进行解决（不熟悉 “哈希冲突” 和 “拉链法” 这 2 个概念的同学可以 [点这里了解](http://blog.csdn.net/u011240877/article/details/52940469)），因此 HashMap 的底层实现是 **数组+链表**
+
+   3. 底层实现是 链表数组，JDK 8 后又加了 红黑树
+
+   4. 允许空键和空值（但空键只有一个，且放在第一位，下面会介绍）
+
+   5. 元素是无序的，而且顺序会不定时改变
+
+   6. 插入、获取的时间复杂度基本是 O(1)（前提是有适当的哈希函数，让元素分布在均匀的位置）
+
+   7. 遍历整个 Map 需要的时间与 桶(数组) 的长度成正比（因此初始化时 HashMap 的容量不宜太大）
+
+   8. 两个关键因子：初始容量、加载因子
+
+      默认初始容量：16，必须是 2 的整数次方。hashmap会选择最接近指定参数 cap 的 2 的 N 次方容量。假如你传入的是 5，返回的初始容量为 8 。
+
+      默认加载因子的大小：0.75，可不是随便的，结合时间和空间效率考虑得到的。
+
+   9. 除了不允许 null 并且同步，Hashtable 几乎和他一样。
 
 
 
