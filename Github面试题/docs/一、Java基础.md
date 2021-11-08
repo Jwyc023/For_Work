@@ -904,8 +904,20 @@ JDK建议将ThreadLocal变量定义成private static的，这样的话ThreadLoca
 2. **Iterator、ListIterator**
 
    1. Iterator及ListIterator两个都是接口，接口是什么？**一套规范，没有标准实现（default方法除外）；**由实现类去实现他们。
+
    2. Iterator规范的是如何查找下一个元素。
        ListIterator则在Iterator的基础上，增加了索引的概念，增加了逆向查询方法。
+       
+   3. 我们在使用 Iterator 对容器进行迭代时如果修改容器 可能会报 *ConcurrentModificationException* 的错。官方称这种情况下的迭代器是 *fail-fast* 迭代器。当你调用 iterator 方法时，返回的迭代器会记住当前的 modCount，随后迭代过程中会检查这个值，一旦发现这个值发生变化，就说明你对容器做了修改，就会抛异常。
+
+       modCount表示集合的元素被修改的次数，每次增加或删除一个元素的时候，modCount都会加一，而expectedModCount用于记录在集合遍历之前的modCount，检查这两者是否相等就是为了检查集合在迭代遍历的过程中有没有被修改，如果被修改了，就会在运行时抛出ConcurrentModificationException这个RuntimeException，以提醒开发者集合已经被修改。 
+       这就说明了为什么集合在使用Iterator进行遍历的时候不能使用集合本身的add或者remove方法来增减元素。但是使用Iterator的remove方法是可以的。
+
+       **remove方法删除的元素是指针指向的元素**。如果当前指针指向的内存中没有元素，那么会抛出异常。所以不能连续remove，要先next。
+
+   4. 迭代器在不使用next()方法情况下进行remove操作会出错。
+
+   5. Iterator 被创建之后会建立一个指向原来对象的单链索引表，当原来的对象数量发生变化时，这个索引表的内容不会同步改变，所以当索引指针往后移动的时候就找不到要迭代的对象。
 
 3. **List**
 
@@ -1011,6 +1023,8 @@ JDK建议将ThreadLocal变量定义成private static的，这样的话ThreadLoca
 
       如果想要实现一个 可变的 Map,我们需要在上述操作外，重写 put() 方法，因为 默认不支持 put 操作（unsupportedOperationException）。而且 entrySet() 返回的 Set 的迭代器，也得实现 remove() 方法，因为 AbstractMap 中的 删除相关操作都需要调用该迭代器的 remove() 方法。
 
+       entrySet().iterator()这是获取iterator的方法。
+
    2. 正如其他集合推荐的那样，比如 [AbstractCollection 接口](http://blog.csdn.net/u011240877/article/details/52829912) ，实现类最好提供两种构造方法：
 
       - 一种是不含参数的，返回一个空 map
@@ -1047,6 +1061,10 @@ JDK建议将ThreadLocal变量定义成private static的，这样的话ThreadLoca
 
       默认加载因子的大小：0.75，可不是随便的，结合时间和空间效率考虑得到的。
 
+      加载因子过高，例如为1，虽然减少了空间开销，提高了空间利用率，但同时也增加了查询时间成本；
+   
+      加载因子过低，例如0.5，虽然可以减少查询时间成本，但是空间利用率很低，同时提高了rehash操作的次数。
+   
    9. 除了不允许 null 并且同步，Hashtable 几乎和他一样。
 
 
