@@ -896,184 +896,294 @@ JDK建议将ThreadLocal变量定义成private static的，这样的话ThreadLoca
 - https://blog.csdn.net/qq_28306343（不只有collection）
 - https://blog.csdn.net/liudong220?t=1
 
-1. **Collection**
+### **Collection**
 
-   1. fail-fast
-   2. modcount
+1. fail-fast
+2. modcount
 
-2. **Iterator、ListIterator**
+### **Iterator、ListIterator**
 
-   1. Iterator及ListIterator两个都是接口，接口是什么？**一套规范，没有标准实现（default方法除外）；**由实现类去实现他们。
+1. Iterator及ListIterator两个都是接口，接口是什么？**一套规范，没有标准实现（default方法除外）；**由实现类去实现他们。
 
-   2. Iterator规范的是如何查找下一个元素。
-       ListIterator则在Iterator的基础上，增加了索引的概念，增加了逆向查询方法。
-       
-   3. 我们在使用 Iterator 对容器进行迭代时如果修改容器 可能会报 *ConcurrentModificationException* 的错。官方称这种情况下的迭代器是 *fail-fast* 迭代器。当你调用 iterator 方法时，返回的迭代器会记住当前的 modCount，随后迭代过程中会检查这个值，一旦发现这个值发生变化，就说明你对容器做了修改，就会抛异常。
+2. Iterator规范的是如何查找下一个元素。
+    ListIterator则在Iterator的基础上，增加了索引的概念，增加了逆向查询方法。
+    
+3. 我们在使用 Iterator 对容器进行迭代时如果修改容器 可能会报 *ConcurrentModificationException* 的错。官方称这种情况下的迭代器是 *fail-fast* 迭代器。当你调用 iterator 方法时，返回的迭代器会记住当前的 modCount，随后迭代过程中会检查这个值，一旦发现这个值发生变化，就说明你对容器做了修改，就会抛异常。
 
-       modCount表示集合的元素被修改的次数，每次增加或删除一个元素的时候，modCount都会加一，而expectedModCount用于记录在集合遍历之前的modCount，检查这两者是否相等就是为了检查集合在迭代遍历的过程中有没有被修改，如果被修改了，就会在运行时抛出ConcurrentModificationException这个RuntimeException，以提醒开发者集合已经被修改。 
-       这就说明了为什么集合在使用Iterator进行遍历的时候不能使用集合本身的add或者remove方法来增减元素。但是使用Iterator的remove方法是可以的。
+    modCount表示集合的元素被修改的次数，每次增加或删除一个元素的时候，modCount都会加一，而expectedModCount用于记录在集合遍历之前的modCount，检查这两者是否相等就是为了检查集合在迭代遍历的过程中有没有被修改，如果被修改了，就会在运行时抛出ConcurrentModificationException这个RuntimeException，以提醒开发者集合已经被修改。 
+    这就说明了为什么集合在使用Iterator进行遍历的时候不能使用集合本身的add或者remove方法来增减元素。但是使用Iterator的remove方法是可以的。
 
-       **remove方法删除的元素是指针指向的元素**。如果当前指针指向的内存中没有元素，那么会抛出异常。所以不能连续remove，要先next。
+    **remove方法删除的元素是指针指向的元素**。如果当前指针指向的内存中没有元素，那么会抛出异常。所以不能连续remove，要先next。
 
-   4. 迭代器在不使用next()方法情况下进行remove操作会出错。
+4. 迭代器在不使用next()方法情况下进行remove操作会出错。
 
-   5. Iterator 被创建之后会建立一个指向原来对象的单链索引表，当原来的对象数量发生变化时，这个索引表的内容不会同步改变，所以当索引指针往后移动的时候就找不到要迭代的对象。
+5. Iterator 被创建之后会建立一个指向原来对象的单链索引表，当原来的对象数量发生变化时，这个索引表的内容不会同步改变，所以当索引指针往后移动的时候就找不到要迭代的对象。
 
-3. **List**
+### **List**
 
-4. **AbstractCollection**
+### **AbstractCollection**
 
-   https://blog.csdn.net/liudong220/article/details/105411754/?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_title~default-0.no_search_link&spm=1001.2101.3001.4242.1
+https://blog.csdn.net/liudong220/article/details/105411754/?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_title~default-0.no_search_link&spm=1001.2101.3001.4242.1
 
-   1. 为什么里面的add要抛出异常UnsupportedOperationException而不是用抽象方法呢？因为程序员可能会选择实现一个不可修改的集合，如果要实现一个可修改的集合，就重写就行。有点像接口隔离原则：客户不要的方法不暴露给他。
+1. 为什么里面的add要抛出异常UnsupportedOperationException而不是用抽象方法呢？因为程序员可能会选择实现一个不可修改的集合，如果要实现一个可修改的集合，就重写就行。有点像接口隔离原则：客户不要的方法不暴露给他。
 
-5. **ArrayList**
+### **ArrayList**
 
-   1. 线程不安全
+1. 线程不安全
 
-      https://blog.csdn.net/u012859681/article/details/78206494
+   https://blog.csdn.net/u012859681/article/details/78206494
 
-   2. ArrayList底层是由数组组成的，初始化是一个空数组（这个版本之间差异较大），容器最大容量为 Integer.MAX_VALUE - 8（2147483639）；
-      在jdk1.8以前，是默认数组大小为10的一个数组，1.8以后时第一次添加操作后扩容时改变大小；（如果添加元素数量小于10，数组大小则为10）；
+2. ArrayList底层是由数组组成的，初始化是一个空数组（这个版本之间差异较大），容器最大容量为 Integer.MAX_VALUE - 8（2147483639）；
+   在jdk1.8以前，是默认数组大小为10的一个数组，1.8以后时第一次添加操作后扩容时改变大小；（如果添加元素数量小于10，数组大小则为10）；
 
-   3. 扩容时会先判断是否需要扩容，需要则扩1.5倍
+3. 扩容时会先判断是否需要扩容，需要则扩1.5倍
 
-   4. 删除不缩容：个人认为这是因为每次删除都去调整大小是很浪费性能的表现，还不如把这种操作交给用户去判断何时操作；
-       假设当前操作是删除操作，下一次是增加操作；
-       如果我们在删除操作时进行了缩容操作，下一次增加的时候，我们又要进行扩容操作，这样非常浪费了性能。
+4. 删除不缩容：个人认为这是因为每次删除都去调整大小是很浪费性能的表现，还不如把这种操作交给用户去判断何时操作；
+    假设当前操作是删除操作，下一次是增加操作；
+    如果我们在删除操作时进行了缩容操作，下一次增加的时候，我们又要进行扩容操作，这样非常浪费了性能。
 
-   5. Arrays的内部类ArrayList和java.util.ArrayList都是继承AbstractList，remove、add等方法AbstractList中是默认throw UnsupportedOperationException而且不作任何操作。java.util.ArrayList重新了这些方法，而Arrays的内部类ArrayList没有重写，所以会抛出异常。
+5. Arrays的内部类ArrayList和java.util.ArrayList都是继承AbstractList，remove、add等方法AbstractList中是默认throw UnsupportedOperationException而且不作任何操作。java.util.ArrayList重新了这些方法，而Arrays的内部类ArrayList没有重写，所以会抛出异常。
 
-   6. ArrayList实现了一个叫做 `RandomAccess` 的接口，而 LinkedList 是没有的。RandomAccess 是一个标志接口，表明实现这个这个接口的 List 集合是支持快速随机访问的。也就是说，实现了这个接口的集合是支持 **快速随机访问** 策略的。
+6. ArrayList实现了一个叫做 `RandomAccess` 的接口，而 LinkedList 是没有的。RandomAccess 是一个标志接口，表明实现这个这个接口的 List 集合是支持快速随机访问的。也就是说，实现了这个接口的集合是支持 **快速随机访问** 策略的。
 
-      同时，官网还特意说明了，如果是实现了这个接口的 **List**，那么使用for循环的方式获取数据会优于用迭代器获取数据。
+   同时，官网还特意说明了，如果是实现了这个接口的 **List**，那么使用for循环的方式获取数据会优于用迭代器获取数据。
 
-6. **AbstractSequentialList**
+### **AbstractSequentialList**
 
-   1. AbstractSequentialList 继承自 AbstractList，是 LinkedList 的父类，是 List 接口 的简化版实现。
+1. AbstractSequentialList 继承自 AbstractList，是 LinkedList 的父类，是 List 接口 的简化版实现。
 
-      简化在哪儿呢？简化在 AbstractSequentialList 只支持按次序访问，而不像 AbstractList 那样支持随机访问。
+   简化在哪儿呢？简化在 AbstractSequentialList 只支持按次序访问，而不像 AbstractList 那样支持随机访问。
 
-   2. 支持 RandomAccess 的对象，遍历时使用 get 比 迭代器更快。
-      而 AbstractSequentialList 只支持迭代器按顺序 访问，不支持 RandomAccess，所以遍历 AbstractSequentialList 的子类，使用 for 循环 get() 的效率要 <= 迭代器遍历。
-   3. get调用的是listiterator(index).next()
+2. 支持 RandomAccess 的对象，遍历时使用 get 比 迭代器更快。
+   而 AbstractSequentialList 只支持迭代器按顺序 访问，不支持 RandomAccess，所以遍历 AbstractSequentialList 的子类，使用 for 循环 get() 的效率要 <= 迭代器遍历。
+3. get调用的是listiterator(index).next()
 
-7. **Queue**
+### **Queue**
 
-   1. 单队列“**假溢出**”
-   2. 循环队列中，rear = (rear - size) % size
-   3. 为了达到判断队列状态的目的，可以通过牺牲一个存储空间来实现。 放满标志 (rear - front) % size = 1
-   4. add、offer等的区别要搞清楚
-   5. Queue 是个接口，它提供的 add, offer 方法初衷是希望子类能够禁止添加元素为 null，这样可以避免在查询时返回 null 究竟是正确还是错误。
-      事实上大多数 Queue 的实现类的确响应了 Queue 接口的规定，比如 ArrayBlockingQueue，PriorityBlockingQueue 等等。
-      但还是有一些实现类没有这样要求，比如 LinkedList。
-   6. 虽然 LinkedList 没有禁止添加 null，但是一般情况下 Queue 的实现类都不允许添加 null 元素，为啥呢？因为 poll(), peek() 方法在异常的时候会返回 null，你添加了 null　以后，当获取时不好分辨究竟是否正确返回。
-   7. Queue 一般都是 FIFO 的，但是也有例外，比如优先队列 priority queue（它的顺序是根据自然排序或者自定义 comparator 的）；再比如 LIFO 的队列（跟栈一样，后来进去的先出去）。
-   8. 不论进入、出去的先后顺序是怎样的，使用 remove()，poll() 方法操作的都是 头部 的元素；而插入的位置则不一定是在队尾了，不同的 queue 会有不同的插入逻辑。
+1. 单队列“**假溢出**”
+2. 循环队列中，rear = (rear - size) % size
+3. 为了达到判断队列状态的目的，可以通过牺牲一个存储空间来实现。 放满标志 (rear - front) % size = 1
+4. add、offer等的区别要搞清楚
+5. Queue 是个接口，它提供的 add, offer 方法初衷是希望子类能够禁止添加元素为 null，这样可以避免在查询时返回 null 究竟是正确还是错误。
+   事实上大多数 Queue 的实现类的确响应了 Queue 接口的规定，比如 ArrayBlockingQueue，PriorityBlockingQueue 等等。
+   但还是有一些实现类没有这样要求，比如 LinkedList。
+6. 虽然 LinkedList 没有禁止添加 null，但是一般情况下 Queue 的实现类都不允许添加 null 元素，为啥呢？因为 poll(), peek() 方法在异常的时候会返回 null，你添加了 null　以后，当获取时不好分辨究竟是否正确返回。
+7. Queue 一般都是 FIFO 的，但是也有例外，比如优先队列 priority queue（它的顺序是根据自然排序或者自定义 comparator 的）；再比如 LIFO 的队列（跟栈一样，后来进去的先出去）。
+8. 不论进入、出去的先后顺序是怎样的，使用 remove()，poll() 方法操作的都是 头部 的元素；而插入的位置则不一定是在队尾了，不同的 queue 会有不同的插入逻辑。
 
-8. **Deque**
+### **Deque**
 
-   1. 每个操作都有两种方法，一种在异常情况下直接抛出异常奔溃，另一种则不会抛异常，而是返回特殊的值，比如 false, null …
+1. 每个操作都有两种方法，一种在异常情况下直接抛出异常奔溃，另一种则不会抛异常，而是返回特殊的值，比如 false, null …
 
-      ![Deque1](D:\学习用\找工作\For_Work\Github面试题\图片\Deque1.png)
+   ![Deque1](D:\学习用\找工作\For_Work\Github面试题\图片\Deque1.png)
 
-   2. LinkedBlockingDeque 如果队列为空时，获取操作将会阻塞，直到有元素添加。
-   3. 在并发编程 中，双端队列 Deque 还用于 “工作密取” 模式。
+2. LinkedBlockingDeque 如果队列为空时，获取操作将会阻塞，直到有元素添加。
+3. 在并发编程 中，双端队列 Deque 还用于 “工作密取” 模式。
 
-9. **Linkedlist**
+### **Linkedlist**
 
-   1. 它既实现了List接口也实现了Deque接口，所以既可以用List声明也可以用Deque声明，即是说存在多种向上转型。用一个接口声明的变量无法使用另一个接口有而这个接口没有的方法，而且自己类里特有的也不行，除非用类声明。
+1. 它既实现了List接口也实现了Deque接口，所以既可以用List声明也可以用Deque声明，即是说存在多种向上转型。用一个接口声明的变量无法使用另一个接口有而这个接口没有的方法，而且自己类里特有的也不行，除非用类声明。
 
-      https://dongshuo.blog.csdn.net/article/details/77145673?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control
+   https://dongshuo.blog.csdn.net/article/details/77145673?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control
 
-   2. linkedList 和 ArrayList 一样，不是同步容器。所以需要外部做同步操作，或者直接用 `Collections.synchronizedList` 方法包一下，最好在创建时就包一下。
+2. linkedList 和 ArrayList 一样，不是同步容器。所以需要外部做同步操作，或者直接用 `Collections.synchronizedList` 方法包一下，最好在创建时就包一下。
 
-   3. 查找时并不是所有指定位置都是从头部开始的，这个得看下标参数的大小，有的则从尾部开始遍历的。
+3. 查找时并不是所有指定位置都是从头部开始的，这个得看下标参数的大小，有的则从尾部开始遍历的。
 
-10. **Vector**
+### **Vector**
 
-    1. Vector 和 ArrayList 一样，都是继承自AbstractList。它是 Stack 的父类。
-    2. 底层也是个数组
-    3. 扩容时会扩大 2 倍，而不是 1.5。默认10。
-    4. Vector 通过 capacity (容量) 和 capacityIncrement (增长数量) 来尽量少的占用空间
-    5. 通过 iterator 和 lastIterator 获得的迭代器是 fail-fast 的
-    6. 同步类，每个方法前都有同步锁 synchronized
+1. Vector 和 ArrayList 一样，都是继承自AbstractList。它是 Stack 的父类。
+2. 底层也是个数组
+3. 扩容时会扩大 2 倍，而不是 1.5。默认10。
+4. Vector 通过 capacity (容量) 和 capacityIncrement (增长数量) 来尽量少的占用空间
+5. 通过 iterator 和 lastIterator 获得的迭代器是 fail-fast 的
+6. 同步类，每个方法前都有同步锁 synchronized
 
-11. **Stack**
+### **Stack**
 
-    1. 有 5 种创建 Stack 的方法
-    2. 采用数组实现
-    3. 除了 push()，剩下的方法都是同步的
+1. 有 5 种创建 Stack 的方法
+2. 采用数组实现
+3. 除了 push()，剩下的方法都是同步的
+
+### Set
 
 ## Map
 
 ![map2](D:\学习用\找工作\For_Work\Github面试题\图片\map2.png)
 
-1. **Map**
-   1. Map 中元素的顺序取决于迭代器迭代时的顺序，有的实现类保证了元素输入输出时的顺序，比如说 TreeMap；有的实现类则是无序的，比如 HashMap。
-   2. KeySet 是一个 Map 中键（key）的集合，**以 Set 的形式保存**，不允许重复，因此键存储的对象需要重写 equals() 和 hashCode() 方法。
-   3. Values 是一个 Map 中值 (value) 的集合，**以 Collection 的形式保存**，因此可以重复。
-   4. 通过 Map.entrySet() 方法获得的是一组 Entry 的集合，保存在 Set 中，所以 Map 中的 Entry 也不能重复。
-   5. 每个 key 只能对应一个 value, 多个 key 可以对应一个 value。
-   6. key, value 都可以是任何引用类型的数据，包括 null。
+### **Map**
 
-2. **AbstractMap**
+1. Map 中元素的顺序取决于迭代器迭代时的顺序，有的实现类保证了元素输入输出时的顺序，比如说 TreeMap；有的实现类则是无序的，比如 HashMap。
+2. KeySet 是一个 Map 中键（key）的集合，**以 Set 的形式保存**，不允许重复，因此键存储的对象需要重写 equals() 和 hashCode() 方法。
+3. Values 是一个 Map 中值 (value) 的集合，**以 Collection 的形式保存**，因此可以重复。
+4. 通过 Map.entrySet() 方法获得的是一组 Entry 的集合，保存在 Set 中，所以 Map 中的 Entry 也不能重复。
+5. 每个 key 只能对应一个 value, 多个 key 可以对应一个 value。
+6. key, value 都可以是任何引用类型的数据，包括 null。
 
-   1. 当我们要实现一个 不可变的 Map 时，只需要继承这个类，然后实现 entrySet() 方法，这个方法返回一个保存所有 key-value 映射的 set。 通常这个 Set 不支持 add(), remove() 方法，Set 对应的迭代器也不支持 remove() 方法。
+### **AbstractMap**
 
-      如果想要实现一个 可变的 Map,我们需要在上述操作外，重写 put() 方法，因为 默认不支持 put 操作（unsupportedOperationException）。而且 entrySet() 返回的 Set 的迭代器，也得实现 remove() 方法，因为 AbstractMap 中的 删除相关操作都需要调用该迭代器的 remove() 方法。
+1. 当我们要实现一个 不可变的 Map 时，只需要继承这个类，然后实现 entrySet() 方法，这个方法返回一个保存所有 key-value 映射的 set。 通常这个 Set 不支持 add(), remove() 方法，Set 对应的迭代器也不支持 remove() 方法。
 
-       entrySet().iterator()这是获取iterator的方法。
+   如果想要实现一个 可变的 Map,我们需要在上述操作外，重写 put() 方法，因为 默认不支持 put 操作（unsupportedOperationException）。而且 entrySet() 返回的 Set 的迭代器，也得实现 remove() 方法，因为 AbstractMap 中的 删除相关操作都需要调用该迭代器的 remove() 方法。
 
-   2. 正如其他集合推荐的那样，比如 [AbstractCollection 接口](http://blog.csdn.net/u011240877/article/details/52829912) ，实现类最好提供两种构造方法：
+    entrySet().iterator()这是获取iterator的方法。
 
-      - 一种是不含参数的，返回一个空 map
-      - 一种是以一个 map 为参数，返回一个和参数内容一样的 map。
+2. 正如其他集合推荐的那样，比如 [AbstractCollection 接口](http://blog.csdn.net/u011240877/article/details/52829912) ，实现类最好提供两种构造方法：
 
-   3. 有两个成员变量：
+   - 一种是不含参数的，返回一个空 map
+   - 一种是以一个 map 为参数，返回一个和参数内容一样的 map。
 
-          keySet, 保存 map 中所有键的 Set
-          values, 保存 map 中所有值的集合
+3. 有两个成员变量：
 
-      他们都是 transient, volatile, 分别表示不可序列化、并发环境下变量的修改能够保证线程可见性。
+       keySet, 保存 map 中所有键的 Set
+       values, 保存 map 中所有值的集合
 
-      需要注意的是 volatile 只能保证可见性，不能保证原子性，需要保证操作是原子性操作，才能保证使用 volatile 关键字的程序在并发时能够正确执行。
+   他们都是 transient, volatile, 分别表示不可序列化、并发环境下变量的修改能够保证线程可见性。
 
-3. **HashMap**
+   需要注意的是 volatile 只能保证可见性，不能保证原子性，需要保证操作是原子性操作，才能保证使用 volatile 关键字的程序在并发时能够正确执行。
 
-   https://blog.csdn.net/samniwu/article/details/90550196（推荐这个）
+### **HashMap**
 
-   1. HashMap 的特殊存储结构使得在获取指定元素前需要经过哈希运算，得到目标元素在哈希表中的位置，然后再进行少量比较即可得到元素，这使得 HashMap 的查找效率贼高。
+https://blog.csdn.net/samniwu/article/details/90550196（推荐这个）
 
-   2. 当发生 哈希冲突（碰撞）的时候，HashMap 采用 **拉链法** 进行解决（不熟悉 “哈希冲突” 和 “拉链法” 这 2 个概念的同学可以 [点这里了解](http://blog.csdn.net/u011240877/article/details/52940469)），因此 HashMap 的底层实现是 **数组+链表**
+https://yikun.github.io/2015/04/01/Java-HashMap%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E5%8F%8A%E5%AE%9E%E7%8E%B0/（这个也很好）
 
-   3. 底层实现是 链表数组，JDK 8 后又加了 红黑树
+1. HashMap 的特殊存储结构使得在获取指定元素前需要经过哈希运算，得到目标元素在哈希表中的位置，然后再进行少量比较即可得到元素，这使得 HashMap 的查找效率贼高。
 
-   4. 允许空键和空值（但空键只有一个，且放在第一位，下面会介绍）
+2. 当发生 哈希冲突（碰撞）的时候，HashMap 采用 **拉链法** 进行解决（不熟悉 “哈希冲突” 和 “拉链法” 这 2 个概念的同学可以 [点这里了解](http://blog.csdn.net/u011240877/article/details/52940469)），因此 HashMap 的底层实现是 **数组+链表**
 
-   5. 元素是无序的，而且顺序会不定时改变
+3. 底层实现是 链表数组，JDK 8 后又加了 红黑树
 
-   6. 插入、获取的时间复杂度基本是 O(1)（前提是有适当的哈希函数，让元素分布在均匀的位置）
+4. 允许空键和空值（但空键只有一个，且放在第一位，下面会介绍）
 
-   7. 遍历整个 Map 需要的时间与 桶(数组) 的长度成正比（因此初始化时 HashMap 的容量不宜太大）
+5. 元素是无序的，而且顺序会不定时改变
 
-   8. 两个关键因子：初始容量、加载因子
+6. 插入、获取的时间复杂度基本是 O(1)（前提是有适当的哈希函数，让元素分布在均匀的位置）
 
-      默认初始容量：16，必须是 2 的整数次方。hashmap会选择最接近指定参数 cap 的 2 的 N 次方容量。假如你传入的是 5，返回的初始容量为 8 。
+7. 遍历整个 Map 需要的时间与 桶(数组) 的长度成正比（因此初始化时 HashMap 的容量不宜太大）
 
-      默认加载因子的大小：0.75，可不是随便的，结合时间和空间效率考虑得到的。
+8. 两个关键因子：初始容量、加载因子
+
+   默认初始容量：16，必须是 2 的整数次方。hashmap会选择最接近指定参数 cap 的 2 的 N 次方容量。假如你传入的是 5，返回的初始容量为 8 。
+
+   默认加载因子的大小：0.75，可不是随便的，结合时间和空间效率考虑得到的。
+
+   加载因子过高，例如为1，虽然减少了空间开销，提高了空间利用率，但同时也增加了查询时间成本；
+
+   加载因子过低，例如0.5，虽然可以减少查询时间成本，但是空间利用率很低，同时提高了rehash操作的次数。
+
+9. 为什么容量必须是2的幂：https://blog.csdn.net/u010841296/article/details/82832166
+
+10. 除了不允许 null 并且同步，Hashtable 几乎和他一样。
+
+11. 一个桶里的entry，他们的hash一定都是一样的吗。应该是不一定的，比如 3&8 和 2&8 就会在一个桶里。
+
+12. HashMap线程不安全的典型表现 —— **重hash的死循环**。
+
+13. ***红黑树***
+
+    https://www.cnblogs.com/finite/p/8251587.html
+
+    1. 规则
+       - 每个节点要么是红色，要么是黑色；
+       - 根节点永远是黑色的；
+       - 所有的叶节点都是是黑色的（注意这里说叶子节点其实是null 节点）；指定红黑树的每个叶子节点都是空节点，而且叶子节点都是黑色。但 Java 实现的红黑树将使用 null 来代表空节点，因此遍历红黑树时将看不到黑色的叶子节点，反而看到每个叶子节点都是红色的。
+       - 每个红色节点的两个子节点一定都是黑色；
+       - 从任一节点到其子树中每个叶子节点的路径都包含相同数量的黑色节点；
+
+    <img src="D:\学习用\找工作\For_Work\Github面试题\图片\Hashmap1.png" alt="Hashmap1" style="zoom: 33%;" />
+
+### **HashTable**
+
+1. HashTable的操作几乎和HashMap一致，主要的区别在于HashTable为了实现多线程安全，在几乎所有的方法上都加上了synchronized锁，而加锁的结果就是HashTable操作的效率十分低下。
+
+2. 与hashmap对比：
+
+   （1）线程安全：HashMap是线程不安全的类，多线程下会造成并发冲突，但单线程下运行效率较高；HashTable是线程安全的类，很多方法都是用synchronized修饰，但同时因为加锁导致并发效率低下，单线程环境效率也十分低；
+
+   （2）插入null：HashMap允许有一个键为null，允许多个值为null；但HashTable不允许键或值为null；
+
+   （3）容量：HashMap底层数组长度必须为2的幂，这样做是为了hash准备，默认为16；而HashTable底层数组长度可以为任意值，这就造成了hash算法散射不均匀，容易造成hash冲突，默认为11；
+
+   （4）Hash映射：HashMap的hash算法通过非常规设计，将底层table长度设计为2的幂，使用位与运算代替取模运算，减少运算消耗；而HashTable的hash算法首先使得hash值小于整型数最大值，再通过取模进行散射运算；
+
+   （5）扩容机制：HashMap创建一个为原先2倍的数组，然后对原数组进行遍历以及rehash；HashTable扩容将创建一个原长度2倍的数组，再使用头插法将链表进行反序；
+
+   （6）结构区别：HashMap是由数组+链表形成，在JDK1.8之后链表长度大于8时转化为红黑树；而HashTable一直都是数组+链表；
+
+   （7）继承关系：HashTable继承自Dictionary类；而HashMap继承自AbstractMap类；
+
+   （8）迭代器：HashMap是fail-fast（查看之前HashMap相关文章）；而HashTable不是。
+
+### **ConcurrentHashMap**
+
+https://blog.csdn.net/justloveyou_/article/details/72783008?spm=1001.2014.3001.5502
+
+1. 在理想状态下，ConcurrentHashMap 可以支持 16 个线程执行并发写操作（如果并发级别设为16），及任意数量线程的读操作。
+
+2. ConcurrentHashMap本质上是一个Segment数组，而一个Segment实例又包含若干个桶，每个桶中都包含一条由若干个 HashEntry 对象链接起来的链表。总的来说，ConcurrentHashMap的高效并发机制是通过以下三方面来保证的(具体细节见后文阐述)：
+
+       1. 通过锁分段技术保证并发环境下的写操作；
+       
+       2. 通过 HashEntry的不变性、Volatile变量的内存可见性和加锁重读机制保证高效、安全的读操作；
+       
+       3. 通过不加锁和加锁两种方案控制跨段操作的的安全性。
+   ![ConcurrentHashMap1](D:\学习用\找工作\For_Work\Github面试题\图片\ConcurrentHashMap1.png)
+
+3. **Segment**
+
+   1. Segment 类继承于 ReentrantLock 类，从而使得 Segment 对象能充当锁的角色。
+
+   2. **Lock**
+
+      1.  https://www.cnblogs.com/dolphin0520/p/3923167.html
+
+      2. Lock和synchronized的选择
+
+         1）Lock是一个接口，而synchronized是Java中的关键字，synchronized是内置的语言实现；
+
+         2）synchronized在发生异常时，会自动释放线程占有的锁，因此不会导致死锁现象发生；而Lock在发生异常时，如果没有主动通过unLock()去释放锁，则很可能造成死锁现象，因此使用Lock时需要在finally块中释放锁；
+
+         3）Lock可以让等待锁的线程响应中断，而synchronized却不行，使用synchronized时，等待的线程会一直等待下去，不能够响应中断；
+
+         4）通过Lock可以知道有没有成功获取锁，而synchronized却无法办到。
+
+         5）Lock可以提高多个线程进行读操作的效率。
+
+      3. 如果锁具备可重入性，则称作为可重入锁。像synchronized和ReentrantLock都是可重入锁，可重入性在我看来实际上表明了锁的分配机制：基于线程的分配，而不是基于方法调用的分配。举个简单的例子，当一个线程执行到某个synchronized方法时，比如说method1，而在method1中会调用另外一个synchronized方法method2，此时线程不必重新去申请锁，而是可以直接执行方法method2。
+
+   3. 在Segment类中，count 变量是一个计数器，它表示每个 Segment 对象管理的 table 数组包含的 HashEntry 对象的个数，也就是 Segment 中包含的 HashEntry 对象的总数。特别需要注意的是，之所以在每个 Segment 对象中包含一个计数器，而不是在 ConcurrentHashMap 中使用全局的计数器，是对 ConcurrentHashMap 并发性的考虑：**因为这样当需要更新计数器时，不用锁定整个ConcurrentHashMap**。事实上，每次对段进行结构上的改变，如在段中进行增加/删除节点(修改节点的值不算结构上的改变)，都要更新count的值，此外，在JDK的实现中每次读取操作开始都要先读取count的值。特别需要注意的是，count是volatile的，这使得对count的任何更新对其它线程都是立即可见的。modCount用于统计段结构改变的次数，主要是为了检测对多个段进行遍历过程中某个段是否发生改变，这一点具体在谈到跨段操作时会详述。threashold用来表示段需要进行重哈希的阈值。loadFactor表示段的负载因子，其值等同于ConcurrentHashMap的负载因子的值。table是一个典型的链表数组，而且也是volatile的，这使得对table的任何更新对其它线程也都是立即可见的。
+
+4. **HashEntry**
+
+   1. 在HashEntry类中，key，hash和next域都被声明为final的，value域被volatile所修饰，因此HashEntry对象几乎是不可变的，这是ConcurrentHashmap读操作并不需要加锁的一个重要原因。
+
+      next域被声明为final本身就意味着我们不能从hash链的中间或尾部添加或删除节点，因为这需要修改next引用值，因此所有的节点的修改只能从头部开始。对于put操作，可以一律添加到Hash链的头部。但是对于remove操作，可能需要从中间删除一个节点，这就需要将要删除节点的前面所有节点整个复制(重新new)一遍，最后一个节点指向要删除结点的下一个结点(这在谈到ConcurrentHashMap的删除操作时还会详述)。特别地，由于value域被volatile修饰，所以其可以确保被读线程读到最新的值，这是ConcurrentHashmap读操作并不需要加锁的另一个重要原因。实际上，ConcurrentHashMap完全允许多个读操作并发进行，读操作并不需要加锁。
+
+   2. 三个非常重要的参数：初始容量、负载因子 和 并发级别，这三个参数是影响ConcurrentHashMap性能的重要参数。从上述源码我们可以看出，ConcurrentHashMap 也正是通过initialCapacity、loadFactor和concurrencyLevel这三个参数进行构造并初始化segments数组、段偏移量segmentShift、段掩码segmentMask和每个segment的。
+
+   3. 假设ConcurrentHashMap一共分为2^n个段，每个段中有2^m个桶，那么段的定位方式是将key的hash值的高n位与(2^n-1)相与。在定位到某个段后，再将key的hash值的低m位与(2^m-1)相与，定位到具体的桶位。
+
+   4. **volatile**
+
+      https://www.cnblogs.com/dolphin0520/p/3920373.html
+
+      https://blog.csdn.net/justloveyou_/article/details/53672005
+
+5. ConcurrentHashMap的重哈希实际上是对ConcurrentHashMap的某个段的重哈希，因此ConcurrentHashMap的每个段所包含的桶位自然也就不尽相同。
+
+6. ConcurrentHashMap不同于HashMap，它既不允许key值为null，也不允许value值为null。但是，get时会存在键值对存在且的Value值为null的情形。JDK官方给出的解释是，这种情形发生的场景是：初始化HashEntry时发生的指令重排序导致的，也就是在HashEntry初始化完成之前便返回了它的引用。这时，JDK给出的解决之道就是加锁重读。（我觉得是线程A在get的时候B在写，B只写了一半，此时已经分配了内存但还没完全赋值之类的）
+
+7. size方法主要思路是先在没有锁的情况下对所有段大小求和，这种求和策略最多执行RETRIES_BEFORE_LOCK次(默认是两次)：在没有达到RETRIES_BEFORE_LOCK之前，求和操作会不断尝试执行（这是因为遍历过程中可能有其它线程正在对已经遍历过的段进行结构性更新）；在超过RETRIES_BEFORE_LOCK之后，如果还不成功就在持有所有段锁的情况下再对所有段大小求和。事实上，在累加count操作过程中，之前累加过的count发生变化的几率非常小，所以ConcurrentHashMap的做法是先尝试RETRIES_BEFORE_LOCK次通过不锁住Segment的方式来统计各个Segment大小，如果统计的过程中，容器的count发生了变化，则再采用加锁的方式来统计所有Segment的大小。
+
+   　　那么，ConcurrentHashMap是如何判断在统计的时候容器的段发生了结构性更新了呢？我们在前文中已经知道，Segment包含一个modCount成员变量，在会引起段发生结构性改变的所有操作(put操作、 remove操作和clean操作)里，都会将变量modCount进行加1，因此，**JDK只需要在统计size前后比较modCount是否发生变化就可以得知容器的大小是否发生变化**。
+
+### LinkedHashMap
+
+1. 它是一个将所有Entry节点链入一个双向链表的HashMap。由于LinkedHashMap是HashMap的子类，所以LinkedHashMap自然会拥有HashMap的所有特性。比如，LinkedHashMap的元素存取过程基本与HashMap基本类似，只是在细节实现上稍有不同。当然，这是由LinkedHashMap本身的特性所决定的，因为它额外维护了一个双向链表用于保持迭代顺序。此外，LinkedHashMap可以很好的支持LRU算法。
+2. 虽然LinkedHashMap增加了时间和空间上的开销，但是它通过维护一个额外的双向链表保证了迭代顺序。特别地，该迭代顺序可以是插入顺序，也可以是访问顺序。因此，根据链表中元素的顺序可以将LinkedHashMap分为：保持插入顺序的LinkedHashMap 和 保持访问顺序的LinkedHashMap，其中LinkedHashMap的默认实现是按插入顺序排序的。 
+
    
-      加载因子过高，例如为1，虽然减少了空间开销，提高了空间利用率，但同时也增加了查询时间成本；
-   
-      加载因子过低，例如0.5，虽然可以减少查询时间成本，但是空间利用率很低，同时提高了rehash操作的次数。
-   
-   9. 为什么容量必须是2的幂：https://blog.csdn.net/u010841296/article/details/82832166
-   
-   10. 除了不允许 null 并且同步，Hashtable 几乎和他一样。
-   
-   11. 一个桶里的entry，他们的hash一定都是一样的吗
-
-
 
 ## Comparable与Comparator
 
