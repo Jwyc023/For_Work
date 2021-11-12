@@ -1,8 +1,3 @@
-- 本github最初的版本是一份word文档，目前只是把word刚刚搬上来了，但是有些图片、排版还没来得急整理，看起来可能还是有点困难
-- 所以可以先关注一下我的公众号，在我的公众号后台回复 **888** 获取这个github仓库的PDF版本，左侧有导航栏，方便大家阅读。
-
-![](http://ww1.sinaimg.cn/large/007s8HJUly1g0fkgcpy8cj30760760t7.jpg)
-
 # Java
 - Oracle JDK有部分源码是闭源的，如果确实需要可以查看OpenJDK的源码，可以在该网站获取。
 - http://grepcode.com/snapshot/repository.grepcode.com/java/root/jdk/openjdk/8u40-b25/
@@ -1060,9 +1055,13 @@ https://yikun.github.io/2015/04/01/Java-HashMap%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90
 
 6. 插入、获取的时间复杂度基本是 O(1)（前提是有适当的哈希函数，让元素分布在均匀的位置）
 
-7. 遍历整个 Map 需要的时间与 桶(数组) 的长度成正比（因此初始化时 HashMap 的容量不宜太大）
+7. 插入新节点在1.6是头部插，1.8是尾部插。
 
-8. 两个关键因子：初始容量、加载因子
+   为什么改成尾部插入：解决死循环是一个点还有一个点就是  当时1.7时候用头插是考虑到了一个所谓的热点数据的点(新插入的数据可能会更早用到)，但这其实是个伪命题,y因为JDK1.7中rehash的时候，旧链表迁移新链表的时候，如果在新表的数组索引位置相同，则链表元素会倒置(就是因为头插) 所以最后的结果 还是打乱了插入的顺序 所以总的来看支撑1.7使用头插的这点原因也不足以支撑下去了 所以就干脆换成尾插 一举多得。
+
+8. 遍历整个 Map 需要的时间与 桶(数组) 的长度成正比（因此初始化时 HashMap 的容量不宜太大）
+
+9. 两个关键因子：初始容量、加载因子
 
    默认初始容量：16，必须是 2 的整数次方。hashmap会选择最接近指定参数 cap 的 2 的 N 次方容量。假如你传入的是 5，返回的初始容量为 8 。
 
@@ -1072,15 +1071,15 @@ https://yikun.github.io/2015/04/01/Java-HashMap%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90
 
    加载因子过低，例如0.5，虽然可以减少查询时间成本，但是空间利用率很低，同时提高了rehash操作的次数。
 
-9. 为什么容量必须是2的幂：https://blog.csdn.net/u010841296/article/details/82832166
+10. 为什么容量必须是2的幂：https://blog.csdn.net/u010841296/article/details/82832166
 
-10. 除了不允许 null 并且同步，Hashtable 几乎和他一样。
+11. 除了不允许 null 并且同步，Hashtable 几乎和他一样。
 
-11. 一个桶里的entry，他们的hash一定都是一样的吗。应该是不一定的，比如 3&8 和 2&8 就会在一个桶里。
+12. 一个桶里的entry，他们的hash一定都是一样的吗。应该是不一定的，比如 3&8 和 2&8 就会在一个桶里。
 
-12. HashMap线程不安全的典型表现 —— **重hash的死循环**。
+13. HashMap线程不安全的典型表现 —— **重hash的死循环**。
 
-13. ***红黑树***
+14. ***红黑树***
 
     https://www.cnblogs.com/finite/p/8251587.html
 
@@ -1180,8 +1179,17 @@ https://blog.csdn.net/justloveyou_/article/details/72783008?spm=1001.2014.3001.5
 
 ### LinkedHashMap
 
+[Map 综述（二）：彻头彻尾理解 LinkedHashMap](https://blog.csdn.net/justloveyou_/article/details/71713781?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522163657190616780366596968%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fblog.%2522%257D&request_id=163657190616780366596968&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_v2~rank_v29-24-71713781.pc_v2_rank_blog_default&utm_term=set&spm=1018.2226.3001.4450)
+
 1. 它是一个将所有Entry节点链入一个双向链表的HashMap。由于LinkedHashMap是HashMap的子类，所以LinkedHashMap自然会拥有HashMap的所有特性。比如，LinkedHashMap的元素存取过程基本与HashMap基本类似，只是在细节实现上稍有不同。当然，这是由LinkedHashMap本身的特性所决定的，因为它额外维护了一个双向链表用于保持迭代顺序。此外，LinkedHashMap可以很好的支持LRU算法。
 2. 虽然LinkedHashMap增加了时间和空间上的开销，但是它通过维护一个额外的双向链表保证了迭代顺序。特别地，该迭代顺序可以是插入顺序，也可以是访问顺序。因此，根据链表中元素的顺序可以将LinkedHashMap分为：保持插入顺序的LinkedHashMap 和 保持访问顺序的LinkedHashMap，其中LinkedHashMap的默认实现是按插入顺序排序的。 
+3. 非同步
+4. 与HashMap相比，LinkedHashMap增加了两个属性用于保证迭代顺序，分别是 **双向链表头结点header** 和  **标志位accessOrder** (值为true时，表示按照访问顺序迭代；值为false时，表示按照插入顺序迭代)。
+   1. 这个header是用transient关键字修饰的。transient是短暂的意思。对于transient 修饰的成员变量，在类的实例对象的序列化处理过程中会被忽略。 因此，transient变量不会贯穿对象的序列化和反序列化，生命周期仅存于调用者的内存中而不会写到磁盘里进行持久化。好处是：在持久化对象时，对于一些特殊的数据成员（如用户的密码，银行卡号等），我们不想用序列化机制来保存它。为了在一个特定对象的一个成员变量上关闭序列化，可以在这个成员变量前加上关键字transient。不过，一个静态变量不管是否被transient修饰，均不能被序列化(如果反序列化后类中static变量还有值，则值为当前JVM中对应static变量的值)。序列化保存的是对象状态，静态变量保存的是类状态，因此序列化并不保存静态变量。
+5. 重新定义了Entry。LinkedHashMap中的Entry增加了两个指针 **before** 和  **after**，它们分别用于维护双向链接列表。特别需要注意的是，next用于维护HashMap各个桶中Entry的连接顺序，before、after用于维护Entry插入的先后顺序的。
+6. 无论采用何种方式创建LinkedHashMap，其都会调用HashMap相应的构造函数。事实上，不管调用HashMap的哪个构造函数，HashMap的构造函数都会在最后调用一个init()方法进行初始化，只不过这个方法在HashMap中是一个空实现，而在LinkedHashMap中重写了它，用于初始化它所维护的双向链表。
+7.   对于put(Key,Value)方法而言，LinkedHashMap完全继承了HashMap的 put(Key,Value) 方法，只是对put(Key,Value)方法所调用的recordAccess方法和addEntry方法进行了重写；对于get(Key)方法而言，LinkedHashMap则直接对它进行了重写。
+8. 
 
    
 
