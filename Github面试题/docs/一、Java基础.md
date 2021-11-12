@@ -1000,7 +1000,35 @@ https://blog.csdn.net/liudong220/article/details/105411754/?utm_medium=distribut
 2. 采用数组实现
 3. 除了 push()，剩下的方法都是同步的
 
-### Set
+### **TreeSet**
+
+1. TreeSet是基于TreeMap实现的。TreeSet中的元素支持2种排序方式：自然排序 或者 根据创建TreeSet 时提供的 Comparator 进行排序。这取决于使用的构造方法。
+
+2. TreeSet为基本操作（add、remove 和 contains）提供受保证的 log(n) 时间开销。
+
+3. 另外，TreeSet是非同步的。 它的iterator 方法返回的迭代器是fail-fast的。
+
+4. 对插入的元素进行排序，是一个有序的集合（主要与HashSet的区别）;
+
+5. 底层使用红黑树结构，而不是哈希表结构；
+
+6. 允许插入Null值；
+
+7. 不允许插入重复元素；
+
+8. 线程不安全；
+
+9. 通过查看源码发现，在TreeSet调用add方法时，会调用到底层TreeMap的put方法，在put方法中会调用到compare(key, key)方法，进行key大小的比较；
+
+   在比较的时候，会将传入的key进行类型强转，所以当我们自定义的App类进行比较的时候，自然就会抛出异常，因为App类并没有实现Comparable接口；
+
+**HashSet**
+
+1. HashSet实现Set接口，底层由HashMap(后面讲解)来实现，为哈希表结构，**新增元素相当于HashMap的key**，value默认为一个固定的Object。在我看来，HashSet相当于一个阉割版的HashMap;
+2. 不允许出现重复因素；
+3. 允许插入Null值；
+4. 元素无序（添加顺序和遍历顺序不一致）；
+5. 线程不安全，若2个线程同时操作HashSet，必须通过代码实现同步；
 
 ## Map
 
@@ -1042,6 +1070,8 @@ https://blog.csdn.net/liudong220/article/details/105411754/?utm_medium=distribut
 https://blog.csdn.net/samniwu/article/details/90550196（推荐这个）
 
 https://yikun.github.io/2015/04/01/Java-HashMap%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E5%8F%8A%E5%AE%9E%E7%8E%B0/（这个也很好）
+
+[面试题](https://blog.csdn.net/weixin_35523284/article/details/112096437)
 
 1. HashMap 的特殊存储结构使得在获取指定元素前需要经过哈希运算，得到目标元素在哈希表中的位置，然后再进行少量比较即可得到元素，这使得 HashMap 的查找效率贼高。
 
@@ -1177,30 +1207,93 @@ https://blog.csdn.net/justloveyou_/article/details/72783008?spm=1001.2014.3001.5
 
    　　那么，ConcurrentHashMap是如何判断在统计的时候容器的段发生了结构性更新了呢？我们在前文中已经知道，Segment包含一个modCount成员变量，在会引起段发生结构性改变的所有操作(put操作、 remove操作和clean操作)里，都会将变量modCount进行加1，因此，**JDK只需要在统计size前后比较modCount是否发生变化就可以得知容器的大小是否发生变化**。
 
-### LinkedHashMap
+### **LinkedHashMap**
 
 [Map 综述（二）：彻头彻尾理解 LinkedHashMap](https://blog.csdn.net/justloveyou_/article/details/71713781?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522163657190616780366596968%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fblog.%2522%257D&request_id=163657190616780366596968&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_v2~rank_v29-24-71713781.pc_v2_rank_blog_default&utm_term=set&spm=1018.2226.3001.4450)
 
+<img src="D:\学习用\找工作\For_Work\Github面试题\图片\LinkedHashMap1.png" alt="LinkedHashMap1" style="zoom: 50%;" />
+
 1. 它是一个将所有Entry节点链入一个双向链表的HashMap。由于LinkedHashMap是HashMap的子类，所以LinkedHashMap自然会拥有HashMap的所有特性。比如，LinkedHashMap的元素存取过程基本与HashMap基本类似，只是在细节实现上稍有不同。当然，这是由LinkedHashMap本身的特性所决定的，因为它额外维护了一个双向链表用于保持迭代顺序。此外，LinkedHashMap可以很好的支持LRU算法。
+
 2. 虽然LinkedHashMap增加了时间和空间上的开销，但是它通过维护一个额外的双向链表保证了迭代顺序。特别地，该迭代顺序可以是插入顺序，也可以是访问顺序。因此，根据链表中元素的顺序可以将LinkedHashMap分为：保持插入顺序的LinkedHashMap 和 保持访问顺序的LinkedHashMap，其中LinkedHashMap的默认实现是按插入顺序排序的。 
+
 3. 非同步
+
 4. 与HashMap相比，LinkedHashMap增加了两个属性用于保证迭代顺序，分别是 **双向链表头结点header** 和  **标志位accessOrder** (值为true时，表示按照访问顺序迭代；值为false时，表示按照插入顺序迭代)。
    1. 这个header是用transient关键字修饰的。transient是短暂的意思。对于transient 修饰的成员变量，在类的实例对象的序列化处理过程中会被忽略。 因此，transient变量不会贯穿对象的序列化和反序列化，生命周期仅存于调用者的内存中而不会写到磁盘里进行持久化。好处是：在持久化对象时，对于一些特殊的数据成员（如用户的密码，银行卡号等），我们不想用序列化机制来保存它。为了在一个特定对象的一个成员变量上关闭序列化，可以在这个成员变量前加上关键字transient。不过，一个静态变量不管是否被transient修饰，均不能被序列化(如果反序列化后类中static变量还有值，则值为当前JVM中对应static变量的值)。序列化保存的是对象状态，静态变量保存的是类状态，因此序列化并不保存静态变量。
-5. 重新定义了Entry。LinkedHashMap中的Entry增加了两个指针 **before** 和  **after**，它们分别用于维护双向链接列表。特别需要注意的是，next用于维护HashMap各个桶中Entry的连接顺序，before、after用于维护Entry插入的先后顺序的。
-6. 无论采用何种方式创建LinkedHashMap，其都会调用HashMap相应的构造函数。事实上，不管调用HashMap的哪个构造函数，HashMap的构造函数都会在最后调用一个init()方法进行初始化，只不过这个方法在HashMap中是一个空实现，而在LinkedHashMap中重写了它，用于初始化它所维护的双向链表。
-7.   对于put(Key,Value)方法而言，LinkedHashMap完全继承了HashMap的 put(Key,Value) 方法，只是对put(Key,Value)方法所调用的recordAccess方法和addEntry方法进行了重写；对于get(Key)方法而言，LinkedHashMap则直接对它进行了重写。
-8. 
-
+   2. 可以理解为，next跟hashmap本身作用一样，但是双向链表是要去记录访问、插入顺序的，所以单看物理上的排列，是用next链接起来的，但是还有一个看不见的链，就是双向链表的顺序。
    
+5. 重新定义了Entry。LinkedHashMap中的Entry增加了两个指针 **before** 和  **after**，它们分别用于维护双向链接列表。特别需要注意的是，next用于维护HashMap各个桶中Entry的连接顺序，before、after用于维护Entry插入的先后顺序的。
+
+6. 无论采用何种方式创建LinkedHashMap，其都会调用HashMap相应的构造函数。事实上，不管调用HashMap的哪个构造函数，HashMap的构造函数都会在最后调用一个init()方法进行初始化，只不过这个方法在HashMap中是一个空实现，而在LinkedHashMap中重写了它，用于初始化它所维护的双向链表。
+
+7. 对于put(Key,Value)方法而言，LinkedHashMap完全继承了HashMap的 put(Key,Value) 方法，只是对put(Key,Value)方法所调用的recordAccess方法和addEntry方法进行了重写；对于get(Key)方法而言，LinkedHashMap则直接对它进行了重写。
+
+   在put操作上，虽然LinkedHashMap完全继承了HashMap的put操作，但是在细节上还是做了一定的调整，比如，在LinkedHashMap中向哈希表中插入新Entry的同时，还会通过Entry的addBefore方法将其链入到双向链表中。在扩容操作上，虽然LinkedHashMap完全继承了HashMap的resize操作，但是鉴于性能和LinkedHashMap自身特点的考量，LinkedHashMap对其中的重哈希过程(transfer方法)进行了重写。在读取操作上，LinkedHashMap中重写了HashMap中的get方法，通过HashMap中的getEntry方法获取Entry对象。在此基础上，进一步获取指定键对应的值。
+
+8. 相比HashMap而言，LinkedHashMap在向哈希表添加一个键值对的同时，也会将其链入到它所维护的双向链表中，以便设定迭代顺序。
+
+9. LinkedHashMap完全继承了HashMap的resize()方法，只是对它所调用的transfer方法进行了重写。
+
+10. LinkedHashMap重写了HashMap中的recordAccess方法（HashMap中该方法为空），当调用父类的put方法时，在发现key已经存在时，会调用该方法；当调用自己的get方法时，也会调用到该方法。该方法提供了LRU算法的实现，它将最近使用的Entry放到双向循环链表的尾部。也就是说，当accessOrder为true时，get方法和put方法都会调用recordAccess方法使得最近使用的Entry移到双向链表的末尾；当accessOrder为默认值false时，从源码中可以看出recordAccess方法什么也不会做。**从插入顺序的层面来说，新的Entry插入到双向链表的尾部可以实现按照插入的先后顺序来迭代Entry，而从访问顺序的层面来说，新put进来的Entry又是最近访问的Entry，也应该将其放在双向链表的尾部。**
+
+    当我们要用LinkedHashMap实现LRU算法时，就需要调用构造方法并将accessOrder置为true。
+
+### **TreeMap**
+
+1. 与HashMap相比，TreeMap是一个能比较元素大小的Map集合，会对传入的key进行了大小排序。其中，可以使用元素的自然顺序，也可以使用集合中自定义的比较器来进行排序；
+2. 不允许出现重复的key；可以插入null键，null值；可以对元素进行排序；
 
 ## Comparable与Comparator
 
-- 基本数据类型包装类和String类均已实现了Comparable接口。
-- 实现了Comparable接口的类的对象的列表或数组可以通过Collections.sort或Arrays.sort进行自动排序，默认为升序。
+[对比区别](http://www.zzvips.com/article/127330.html)
 
+1. 他们都是java的一个接口, 并且是用来对自定义的class比较大小的。
 
-- 可以将 Comparator 传递给 sort 方法（如 Collections.sort 或 Arrays.sort)，从而允许在排序顺序上实现精确控制。还可以使用 Comparator 来控制某些数据结构（如TreeSet,TreeMap)的顺序。
-- 
+2. ​	Comparable是排序接口；若一个类实现了Comparable接口，就意味着“该类支持排序”。
+
+   ​	而Comparator是比较器；我们若需要控制某个类的次序，可以建立一个“该类的比较器”来进行排序。
+
+   ​	我们不难发现：Comparable相当于“内部比较器”，而Comparator相当于“外部比较器”。
+
+### Comparable
+
+1. 基本数据类型包装类和String类均已实现了Comparable接口。
+
+2. ​	Comparable 是排序接口。
+
+   若一个类实现了Comparable接口，就意味着“该类支持排序”。  即然实现Comparable接口的类支持排序，假设现在存在“实现Comparable接口的类的对象的List列表(或数组)”，则该List列表(或数组)可以通过 Collections.sort（或 Arrays.sort）进行排序。
+
+   ​									
+
+   ```
+   public interface Comparable<T> {
+   	public int compareTo(T o);
+   }
+   ```
+
+3. 假设我们通过 x.compareTo(y) 来“比较x和y的大小”。若返回“负数”，意味着“x比y小”；返回“零”，意味着“x等于y”；返回“正数”，意味着“x大于y”。如果想改排序可以判断compareTo输出>0就返回-1。
+
+### Comparator
+
+1. ​	Comparator 是比较器接口。
+
+   我们若需要控制某个类的次序，而该类本身不支持排序(即没有实现Comparable接口)；那么，我们可以建立一个“该类的比较器”来进行排序。这个“比较器”只需要实现Comparator接口即可。
+
+   也就是说，我们可以通过“实现Comparator类来新建一个比较器”，然后通过该比较器对类进行排序。
+
+   ```
+    public interface Comparator<T> {
+     int compare(T o1, T o2);
+     boolean equals(Object obj);
+   }
+   ```
+
+2. ​	若一个类要实现Comparator接口：它一定要实现compareTo(T o1, T o2) 函数，但可以不实现 equals(Object obj) 函数。
+
+   为什么可以不实现 equals(Object obj) 函数呢？ 因为任何类，默认都是已经实现了equals(Object obj)的。  Java中的一切类都是继承于java.lang.Object，在Object.java中实现了equals(Object  obj)函数；所以，其它所有的类也相当于都实现了该函数。
+
+   int compare(T o1, T o2) 是“比较o1和o2的大小”。返回“负数”，意味着“o1比o2小”；返回“零”，意味着“o1等于o2”；返回“正数”，意味着“o1大于o2”。
 
 # 1.9 继承
 
