@@ -212,7 +212,7 @@ public boolean equals(Object anObject) {
 - 一般是使用StringUtils来增强String的功能。
 
 - 为什么只加载系统通过的java.lang.String类而不加载用户自定义的java.lang.String类呢？
-  - 双亲委派机制（先向上查找，再向下委派）
+  - **双亲委派机制**（先向上查找，再向下委派）
   
     <img src="D:\学习用\找工作\Github面试题\图片\双亲委派机制.png" alt="image-20211028190636525" style="zoom:50%;" />
   
@@ -1295,7 +1295,703 @@ https://blog.csdn.net/justloveyou_/article/details/72783008?spm=1001.2014.3001.5
 
    int compare(T o1, T o2) 是“比较o1和o2的大小”。返回“负数”，意味着“o1比o2小”；返回“零”，意味着“o1等于o2”；返回“正数”，意味着“o1大于o2”。
 
-# 1.9 继承
+# 1.9 类
+
+## 类
+
+1. 在Java中，类文件是以.java为后缀的代码文件，在每个类文件中最多只允许出现一个public类，当有public类的时候，类文件的名称必须和public类的名称相同，若不存在public，则类文件的名称可以为任意的名称（当然以数字开头的名称是不允许的）。
+2. 在类内部，对于**成员变量**，如果在定义的时候没有进行显示的赋值初始化，则Java会保证类的每个成员变量都得到恰当的初始化（局部变量不会初始化）：
+   1. 对于 char、short、byte、int、long、float、double等基本数据类型的变量来说会默认初始化为0（boolean变量默认会被初始化为false）；
+   2. 对于引用类型的变量，会默认初始化为null。
+3. 如果没有显示地定义构造器，则编译器会自动创建一个无参构造器，但是要记住一点，如果显示地定义了构造器，编译器就不会自动添加构造器。
+
+### 类的加载
+
+https://blog.csdn.net/justloveyou_/article/details/72466105
+
+1. 我们知道，一个.java文件在编译后会形成相应的一个或多个Class文件，这些Class文件中描述了类的各种信息，并且它们最终都需要被加载到虚拟机中才能被运行和使用。事实上，虚拟机把描述类的数据从Class文件加载到内存，并对数据进行校验，转换解析和初始化，最终形成可以被虚拟机直接使用的Java类型的过程就是虚拟机的类加载机制。
+
+2. 在Java语言里面，类型的加载和连接都是在程序运行期间完成，这样会在类加载时稍微增加一些性能开销，但是却能为Java应用程序提供高度的灵活性，Java中天生可以动态扩展的语言特性多态就是依赖运行期动态加载和动态链接这个特点实现的。例如，如果编写一个使用接口的应用程序，可以等到运行时再指定其实际的实现。这种组装应用程序的方式广泛应用于Java程序之中。
+
+   既然这样，那么，
+
+   - 虚拟机什么时候才会加载Class文件并初始化类呢？（类加载和初始化时机）
+
+   - 虚拟机如何加载一个Class文件呢？（Java类加载的方式：类加载器、双亲委派机制）
+
+   - 虚拟机加载一个Class文件要经历那些具体的步骤呢？（类加载过程/步骤）
+
+#### 类加载的时机
+
+Java类从被加载到虚拟机内存中开始，到卸载出内存为止，它的整个生命周期包括：加载（Loading）、验证（Verification）、准备(Preparation)、解析(Resolution)、初始化(Initialization)、使用(Using) 和 卸载(Unloading)七个阶段。其中准备、验证、解析3个部分统称为连接（Linking），如图所示：
+
+![类加载过程1](D:\学习用\找工作\For_Work\Github面试题\图片\类加载过程1.png)
+
+加载、验证、准备、初始化和卸载这5个阶段的顺序是确定的，类的加载过程必须按照这种顺序按部就班地开始，而解析阶段则不一定：它在某些情况下可以在初始化阶段之后再开始，这是为了支持Java语言的运行时绑定（也称为动态绑定或晚期绑定）。以下陈述的内容都已HotSpot为基准。特别需要注意的是，类的加载过程必须按照这种顺序按部就班地“开始”，而不是按部就班的“进行”或“完成”，因为这些阶段通常都是相互交叉地混合式进行的，也就是说通常会在一个阶段执行的过程中调用或激活另外一个阶段。
+
+1. 类加载时机：什么情况下虚拟机需要开始加载一个类呢？虚拟机规范中并没有对此进行强制约束，这点可以交给虚拟机的具体实现来自由把握。
+
+2. 类初始化时机
+
+   那么，什么情况下虚拟机需要开始初始化一个类呢？这在虚拟机规范中是有严格规定的，虚拟机规范指明 有且只有 六种情况必须立即对类进行初始化（而这一过程自然发生在加载、验证、准备之后）：
+
+     1. 遇到new、getstatic、putstatic或invokestatic这四条字节码指令（注意，newarray指令触发的只是数组类型本身的初始化，而不会导致其相关类型的初始化，比如，new String[]只会直接触发String[]类的初始化，也就是触发对类[Ljava.lang.String的初始化，而直接不会触发String类的初始化）时，如果类没有进行过初始化，则需要先对其进行初始化。生成这四条指令的最常见的Java代码场景是：
+
+        - 使用new关键字实例化对象的时候；
+
+        - 读取或设置一个类的静态字段（被final修饰，已在编译期把结果放入常量池的静态字段除外）的时候；
+
+        - 调用一个类的静态方法的时候。
+
+   2) 使用java.lang.reflect包的方法对类进行反射调用的时候，如果类没有进行过初始化，则需要先触发其初始化。
+
+   3) 当初始化一个类的时候，如果发现其父类还没有进行过初始化，则需要先触发其父类的初始化。
+
+   4) 当虚拟机启动时，用户需要指定一个要执行的主类（包含main()方法的那个类），虚拟机会先初始化这个主类。
+
+   5) 当使用jdk1.7动态语言支持时，如果一个java.lang.invoke.MethodHandle实例最后的解析结果REF_getstatic,REF_putstatic,REF_invokeStatic的方法句柄，并且这个方法句柄所对应的类没有进行初始化，则需要先出触发其初始化。
+
+   6) 当一个接口中定义了JDK8新加入的默认方法（被default关键字修饰的接口方法）时，如果有这个接口的实现类发生了初始化，那么该接口要在这个类之前初始化。
+
+   这六种场景中的行为称为对一个类进行 **主动引用**。除此之外，所有引用类的方式，都不会触发初始化，称为 **被动引用**。
+
+   特别需要指出的是，**类的实例化**与类的**初始化**是两个完全不同的概念：
+
+   - 类的实例化是指创建一个类的实例(对象)的过程；
+   - 类的初始化是指为类中各个类成员(被static修饰的成员变量)赋初始值的过程，是类生命周期中的一个阶段。
+
+3. 被动引用的几种经典场景（有代码）
+
+   1. 通过子类引用父类的静态字段，不会导致子类初始化
+
+      ```java
+      public class SSClass{
+          static{
+              System.out.println("SSClass");
+          }
+      }  
+      
+      public class SClass extends SSClass{
+          static{
+              System.out.println("SClass init!");
+          }
+      
+          public static int value = 123;
+      
+          public SClass(){
+              System.out.println("init SClass");
+          }
+      }
+      
+      public class SubClass extends SClass{
+          static{
+              System.out.println("SubClass init");
+          }
+      
+          static int a;
+      
+          public SubClass(){
+              System.out.println("init SubClass");
+          }
+      }
+      
+      public class NotInitialization{
+          public static void main(String[] args){
+              System.out.println(SubClass.value);
+          }
+      }/* Output: 
+              SSClass
+              SClass init!
+              123     
+       *///:~
+      ```
+
+      对于静态字段，只有直接定义这个字段的类才会被初始化，因此通过其子类来引用父类中定义的静态字段，只会触发父类的初始化而不会触发子类的初始化。在本例中，由于value字段是在类SClass中定义的，因此该类会被初始化；此外，在初始化类SClass时，虚拟机会发现其父类SSClass还未被初始化，因此虚拟机将先初始化父类SSClass，然后初始化子类SClass，而SubClass始终不会被初始化。
+
+      
+
+   2. 通过数组定义来引用类，不会触发此类的初始化
+
+      ```
+      public class NotInitialization{
+          public static void main(String[] args){
+              SClass[] sca = new SClass[10];
+          }
+      }
+      ```
+
+      上述案例运行之后并没有任何输出，说明虚拟机并没有初始化类SClass。但是，这段代码触发了另外一个名为[Lcn.edu.tju.rico.SClass的类的初始化。从类名称我们可以看出，这个类代表了元素类型为SClass的一维数组，它是由虚拟机自动生成的，直接继承于Object的子类，创建动作由字节码指令newarray触发。
+
+      
+
+   3. 常量在编译阶段会存入调用类的常量池中，本质上并没有直接引用到定义常量的类，因此不会触发定义常量的类的初始化
+
+      ```java
+      public class ConstClass{
+      
+          static{
+              System.out.println("ConstClass init!");
+          }
+      
+          public static  final String CONSTANT = "hello world";
+      }
+      
+      public class NotInitialization{
+          public static void main(String[] args){
+              System.out.println(ConstClass.CONSTANT);
+          }
+      }/* Output: 
+              hello world
+       *///:~
+      ```
+
+      上述代码运行之后，只输出 “hello world”，这是因为虽然在Java源码中引用了ConstClass类中的常量CONSTANT，但是编译阶段将此常量的值“hello world”存储到了NotInitialization常量池中，对常量ConstClass.CONSTANT的引用实际都被转化为NotInitialization类对自身常量池的引用了。也就是说，实际上NotInitialization的Class文件之中并没有ConstClass类的符号引用入口，这两个类在编译为Class文件之后就不存在关系了。***（使用一个别的类的类变量，这个类变量会存在我的常量池中吗）***
+
+#### 类加载的过程
+
+1. 加载（Loading）
+
+   在加载阶段（可以参考java.lang.ClassLoader的loadClass()方法），虚拟机需要完成以下三件事情：
+
+   - 通过一个类的全限定名来获取定义此类的二进制字节流（并没有指明要从一个Class文件中获取，可以从其他渠道，譬如：网络、动态生成、数据库等）；
+   - 将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构；
+   - 在内存中(对于HotSpot虚拟就而言就是方法区)生成一个代表这个类的java.lang.Class对象，作为方法区这个类的各种数据的访问入口；
+
+   加载阶段和连接阶段（Linking）的部分内容（如一部分字节码文件格式验证动作）是交叉进行的，加载阶段尚未完成，连接阶段可能已经开始，但这些夹在加载阶段之中进行的动作，仍然属于连接阶段的内容，这两个阶段的开始时间仍然保持着固定的先后顺序。
+
+   特别地，第一件事情(通过一个类的全限定名来获取定义此类的二进制字节流)是由类加载器完成的，具体涉及JVM预定义的类加载器、双亲委派模型等内容，详情请参见我的转载博文《深入理解Java类加载器(一)：Java类加载原理解析》中的说明，此不赘述。
+
+2. 验证（Verification）
+
+   　　验证是连接阶段的第一步，这一阶段的目的是为了确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。 验证阶段大致会完成4个阶段的检验动作：
+
+   - 文件格式验证：验证字节流是否符合Class文件格式的规范
+
+   - 元数据验证：对字节码描述的信息进行语义分析，以保证其描述的信息符合Java语言规范的要求(例如：这个类是否有父类，除了java.lang.Object之外)；
+
+   - 字节码验证：通过数据流和控制流分析，确定程序语义是合法的、符合逻辑的;
+
+   - 符号引用验证：确保解析动作能正确执行。
+
+   验证阶段是非常重要的，但不是必须的，它对程序运行期没有影响。如果所引用的类经过反复验证，那么可以考虑采用-Xverifynone参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。
+
+3. 准备(Preparation)
+
+   　　准备阶段是正式为类变量(static 成员变量)分配内存并设置类变量初始值（零值）的阶段，这些变量所使用的内存都将在方法区中进行分配。这时候进行内存分配的仅包括类变量，而不包括实例变量，实例变量将会在对象实例化时随着对象一起分配在堆中。其次，这里所说的初始值“通常情况”下是数据类型的零值，假设一个类变量的定义为：
+
+       public static int value = 123;
+
+   　　那么，变量value在准备阶段过后的值为0而不是123。因为这时候尚未开始执行任何java方法，而把value赋值为123的putstatic指令是程序被编译后，存放于类构造器方法<clinit>()之中，所以把value赋值为123的动作将在初始化阶段才会执行。至于“特殊情况”是指：当类字段的字段属性是ConstantValue时，会在准备阶段初始化为指定的值，所以标注为**final**之后，value的值在准备阶段初始化为123而非0。
+
+   ```
+   public static final int value = 123;
+   ```
+
+4. 解析(Resolution)
+
+   解析阶段是虚拟机将**常量池内**的**符号引用**替换为**直接引用**的过程。解析动作主要针对类或接口、字段、类方法、接口方法、方法类型、方法句柄和调用点限定符7类符号引用进行。
+
+   1. 符号引用（Symbolic References）：
+
+      符号引用以一组符号来描述所引用的目标，符号可以是任何形式的字面量，只要使用时能够无歧义的定位到目标即可。例如，在Class文件中它以CONSTANT_Class_info、CONSTANT_Fieldref_info、CONSTANT_Methodref_info等类型的常量出现。符号引用与虚拟机的内存布局无关，引用的目标并不一定加载到内存中。在[Java](http://lib.csdn.net/base/javaee)中，一个java类将会编译成一个class文件。在编译时，java类并不知道所引用的类的实际地址，因此只能使用符号引用来代替。比如org.simple.People类引用了org.simple.Language类，在编译时People类并不知道Language类的实际内存地址，因此只能使用符号org.simple.Language（假设是这个，当然实际中是由类似于CONSTANT_Class_info的常量来表示的）来表示Language类的地址。各种虚拟机实现的内存布局可能有所不同，但是它们能接受的符号引用都是一致的，因为符号引用的字面量形式明确定义在Java虚拟机规范的Class文件格式中。
+
+   2. 直接引用
+
+      直接引用可以是
+
+      （1）直接指向目标的指针（比如，指向“类型”【Class对象】、类变量、类方法的直接引用可能是指向方法区的指针）
+
+      （2）相对偏移量（比如，指向实例变量、实例方法的直接引用都是偏移量）
+
+      （3）一个能间接定位到目标的句柄
+
+      直接引用是和虚拟机的布局相关的，同一个符号引用在不同的虚拟机实例上翻译出来的直接引用一般不会相同。如果有了直接引用，那引用的目标必定已经被加载入内存中了。
+
+5. 初始化(Initialization)
+
+   　　类初始化阶段是类加载过程的最后一步。在前面的类加载过程中，除了在加载阶段用户应用程序可以通过自定义类加载器参与之外，其余动作完全由虚拟机主导和控制。**到了初始化阶段，才真正开始执行类中定义的java程序代码(字节码)**。
+
+   　　在准备阶段，变量已经赋过一次系统要求的初始值(零值)；而在初始化阶段，则根据程序猿通过程序制定的主观计划去初始化类变量和其他资源，或者更直接地说：初始化阶段是执行类构造器<clinit>()方法的过程。<clinit>()方法是由编译器自动收集类中的所有类变量的赋值动作和静态语句块static{}中的语句合并产生的，编译器收集的顺序是由语句在源文件中出现的顺序所决定的，**静态语句块只能访问到定义在静态语句块之前的变量，定义在它之后的变量，在前面的静态语句块可以赋值，但是不能访问。如下**：
+
+   ```
+   public class Test{
+       static{
+           i=0;
+           System.out.println(i);//Error：Cannot reference a field before it is defined（非法向前应用）
+       }
+       static int i=1;
+   }
+   ```
+
+   那么注释报错的那行代码，改成下面情形，程序就可以编译通过并可以正常运行了。
+
+   ```
+   public class Test{
+       static{
+           i=0;
+           //System.out.println(i);
+       }
+   
+       static int i=1;
+   
+       public static void main(String args[]){
+           System.out.println(i);
+       }
+   }/* Output: 
+           1
+    *///:~
+   ```
+
+   类构造器<clinit>()与实例构造器<init>()不同，它不需要程序员进行显式调用，虚拟机会保证在子类类构造器<clinit>()执行之前，父类的类构造<clinit>()执行完毕。由于父类的构造器<clinit>()先执行，也就意味着父类中定义的静态语句块/静态变量的初始化要优先于子类的静态语句块/静态变量的初始化执行。特别地，类构造器<clinit>()对于类或者接口来说并不是必需的，如果一个类中没有静态语句块，也没有对类变量的赋值操作，那么编译器可以不为这个类生产类构造器<clinit>()。 
+
+   [clinit和init的执行顺序解读](https://www.cnblogs.com/czwbig/p/11155555.html)
+
+   虚拟机会保证一个类的类构造器<clinit>()在多线程环境中被正确的加锁、同步，如果多个线程同时去初始化一个类，那么只会有一个线程去执行这个类的类构造器<clinit>()，其他线程都需要阻塞等待，直到活动线程执行<clinit>()方法完毕。特别需要注意的是，在这种情形下，其他线程虽然会被阻塞，但如果执行<clinit>()方法的那条线程退出后，其他线程在唤醒之后不会再次进入/执行<clinit>()方法，因为 在同一个类加载器下，一个类型只会被初始化一次。如果在一个类的<clinit>()方法中有耗时很长的操作，就可能造成多个线程阻塞，在实际应用中这种阻塞往往是隐藏的，如下所示：
+
+   ```java
+   public class DealLoopTest {
+       static{
+           System.out.println("DealLoopTest...");
+       }
+       static class DeadLoopClass {
+           static {
+               if (true) {
+                   System.out.println(Thread.currentThread()
+                           + "init DeadLoopClass");
+                   while (true) {      // 模拟耗时很长的操作
+                   }
+               }
+           }
+       }
+   
+       public static void main(String[] args) {
+           Runnable script = new Runnable() {   // 匿名内部类
+               public void run() {
+                   System.out.println(Thread.currentThread() + " start");
+                   DeadLoopClass dlc = new DeadLoopClass();
+                   System.out.println(Thread.currentThread() + " run over");
+               }
+           };
+   
+           Thread thread1 = new Thread(script);
+           Thread thread2 = new Thread(script);
+           thread1.start();
+           thread2.start();
+       }
+   }/* Output: 
+           DealLoopTest...
+           Thread[Thread-1,5,main] start
+           Thread[Thread-0,5,main] start //这里先执行这个是因为多线程吧
+           Thread[Thread-1,5,main]init DeadLoopClass
+    *///:~
+   ```
+
+   如上述代码所示，在初始化DeadLoopClass类时，线程Thread-1得到执行并在执行这个类的类构造器<clinit>() 时，由于该方法包含一个死循环，因此久久不能退出。
+
+   
+
+#### 典型案例分析
+
+我们知道，在Java中， 创建一个对象常常需要经历如下几个过程：父类的类构造器<clinit>() -> 子类的类构造器<clinit>() -> 父类的成员变量和实例代码块 -> 父类的构造函数 -> 子类的成员变量和实例代码块 -> 子类的构造函数。至于为什么是这样的一个过程，笔者在本文的姊妹篇《 深入理解Java对象的创建过程：类的初始化与实例化》很好的解释了这个问题。
+
+那么，我们看看下面的程序的输出结果：
+
+```java
+public class StaticTest {
+    public static void main(String[] args) {
+        staticFunction();
+    }
+
+    static StaticTest st = new StaticTest();
+
+    static {   //静态代码块
+        System.out.println("1");
+    }
+
+    {       // 实例代码块
+        System.out.println("2");
+    }
+
+    StaticTest() {    // 实例构造器
+        System.out.println("3");
+        System.out.println("a=" + a + ",b=" + b);
+    }
+
+    public static void staticFunction() {   // 静态方法
+        System.out.println("4");
+    }
+
+    int a = 110;    // 实例变量
+    static int b = 112;     // 静态变量
+}/* Output: 
+        2
+        3
+        a=110,b=0
+        1
+        4
+ *///:~
+```
+
+大家能得到正确答案吗？虽然笔者勉强猜出了正确答案，但总感觉怪怪的。因为在初始化阶段，当JVM对类StaticTest进行初始化时，首先会执行下面的语句：
+
+```
+static StaticTest st = new StaticTest();
+```
+
+​	也就是实例化StaticTest对象，但这个时候类都没有初始化完毕啊，能直接进行实例化吗？事实上，这涉及到一个根本问题就是：**实例初始化不一定要在类初始化结束之后才开始初始化**。 下面我们结合类的加载过程说明这个问题。
+
+　　我们知道，类的生命周期是：加载->验证->准备->解析->初始化->使用->卸载，并且只有在准备阶段和初始化阶段才会涉及类变量的初始化和赋值，因此我们只针对这两个阶段进行分析：
+
+　　首先，在类的准备阶段需要做的是为类变量（static变量）分配内存并设置默认值(零值)，因此在该阶段结束后，类变量st将变为null、b变为0。特别需要注意的是，如果类变量是final的，那么编译器在编译时就会为value生成ConstantValue属性，并在准备阶段虚拟机就会根据ConstantValue的设置将变量设置为指定的值。也就是说，如果上述程度对变量b采用如下定义方式时：
+
+```
+static final int b=112
+```
+
+那么，在准备阶段b的值就是112，而不再是0了。
+
+此外，在类的初始化阶段需要做的是执行类构造器<clinit>()，需要指出的是，类构造器本质上是编译器收集所有静态语句块和类变量的赋值语句按语句在源码中的顺序合并生成类构造器<clinit>()。因此，对上述程序而言，JVM将先执行第一条静态变量的赋值语句：
+
+```
+st = new StaticTest ()
+```
+
+此时，就碰到了笔者上面的疑惑，即“在类都没有初始化完毕之前，能直接进行实例化相应的对象吗？”。事实上，从Java角度看，我们知道一个类初始化的基本常识，那就是：在同一个类加载器下，一个类型只会被初始化一次。所以，一旦开始初始化一个类型，无论是否完成，后续都不会再重新触发该类型的初始化阶段了(只考虑在同一个类加载器下的情形)。因此，在实例化上述程序中的st变量时，实际上是把实例初始化嵌入到了静态初始化流程中，并且在上面的程序中，嵌入到了静态初始化的起始位置。这就导致了实例初始化完全发生在静态初始化之前，当然，这也是导致a为110，b为0的原因。（因为先执行力了实例初始化，所以a=110？）
+
+​	**实例初始化流程**：实例初始化就是执行<init>()方法
+
+​		(1)<init>()方法可能重载有多个，有几个构造器就有几个<init>()方法
+
+​		(2)<init>()方法由非静态变量显示赋值代码和非静态代码块、对应构造器代码组成
+
+​		(3)非静态变量显示赋值代码和非静态代码块从上到下顺序执行，**最后执行构造器代码**
+
+​		(4)每次创建实例对象，调用对应构造器，执行的都是<init>()方法
+
+​		(5)<init>()方法的首行是super()或super(实参列表)，即对应父类的<init>()方法
+
+因此，上述程序会有上面的输出结果。下面，我们对上述程序稍作改动，如下所示：
+
+```java
+public class StaticTest {
+    public static void main(String[] args) {
+        staticFunction();
+    }
+
+    static StaticTest st = new StaticTest();// 在哪，堆还是方法区？
+
+    static {
+        System.out.println("1");
+    }
+
+    {
+        System.out.println("2");
+    }
+
+    StaticTest() {
+        System.out.println("3");
+        System.out.println("a=" + a + ",b=" + b);
+    }
+
+    public static void staticFunction() {
+        System.out.println("4");
+    }
+
+    int a = 110;// 这个a储存在哪？
+    static int b = 112;
+    static StaticTest st1 = new StaticTest();
+}
+```
+
+那么，此时程序的输出又是什么呢？如果你对上述的内容理解很好的话，不难得出结论(只有执行完上述代码行后，StaticTest类才被初始化完成)，即：
+
+```
+2
+3
+a=110,b=0
+1
+2
+3
+a=110,b=112
+4
+```
+
+另外，下面这道经典题目也很有意思，如下：
+
+```java
+class Foo {
+    int i = 1;
+
+    Foo() {
+        System.out.println(i);             
+        int x = getValue();
+        System.out.println(x);            
+    }
+
+    {
+        i = 2;
+    }
+
+    protected int getValue() {
+        return i;
+    }
+}
+
+//子类
+class Bar extends Foo {
+    int j = 1;
+
+    Bar() {
+        j = 2;
+    }
+
+    {
+        j = 3;
+    }
+
+    @Override
+    protected int getValue() {
+        return j;
+    }
+}
+
+public class ConstructorExample {
+    public static void main(String... args) {
+        Bar bar = new Bar();
+        System.out.println(bar.getValue());        
+    }
+}
+```
+
+在通过使用Bar类的构造方法new一个Bar类的实例时，首先会调用Foo类构造函数，因此(1)处输出是2，这从Foo类构造函数的等价变换中可以直接看出。(2)处输出是0，为什么呢？因为在执行Foo的构造函数的过程中，由于Bar重载了Foo中的getValue方法，所以根据Java的多态特性可以知道，**其调用的getValue方法是被Bar重载的那个getValue方法**。但由于这时Bar的构造函数还没有被执行，因此此时j的值还是默认值0，因此(2)处输出是0。最后，在执行(3)处的代码时，由于bar对象已经创建完成，所以此时再访问j的值时，就得到了其初始化后的值2，这一点可以从Bar类构造函数的等价变换中直接看出。
+
+
+
+### 类的初始化与实例化
+
+在Java中，一个对象在可以被使用之前必须要被正确地初始化，这一点是Java规范规定的。在实例化一个对象时，JVM首先会检查相关类型是否已经加载并初始化，如果没有，则JVM立即进行加载并调用类构造器完成类的初始化。在类初始化过程中或初始化完毕后，根据具体情况才会去对类进行实例化。
+
+#### Java对象创建时机
+
+我们知道，一个对象在可以被使用之前必须要被正确地实例化。在Java代码中，有很多行为可以引起对象的创建，最为直观的一种就是使用new关键字来调用一个类的构造函数显式地创建对象，这种方式在Java规范中被称为 : 由执行类实例创建表达式而引起的对象创建。除此之外，我们还可以使用反射机制(Class类的newInstance方法、使用Constructor类的newInstance方法)、使用Clone方法、使用反序列化等方式创建对象。下面笔者分别对此进行一一介绍：
+
+1. 使用new关键字创建对象
+
+   这是我们最常见的也是最简单的创建对象的方式，通过这种方式我们可以调用任意的构造函数（无参的和有参的）去创建对象。
+
+2. 使用Class类的newInstance方法(反射机制)
+
+   我们也可以通过Java的反射机制使用Class类的newInstance方法来创建对象，事实上，这个newInstance方法调用无参的构造器创建对象，比如：
+
+   ```java
+   　　Student student2 = (Student)Class.forName("Student类全限定名").newInstance();　
+   或者：
+   　　Student stu = Student.class.newInstance();
+   ```
+
+3. 使用Constructor类的newInstance方法(反射机制)
+
+   java.lang.relect.Constructor类里也有一个newInstance方法可以创建对象，该方法和Class类中的newInstance方法很像，但是相比之下，Constructor类的newInstance方法更加强大些，我们可以通过这个newInstance方法调用有参数的和私有的构造函数，比如：
+
+   ```java
+   public class Student {
+   
+       private int id;
+   
+       public Student(Integer id) {
+           this.id = id;
+       }
+   
+       public static void main(String[] args) throws Exception {
+   
+           Constructor<Student> constructor = Student.class
+                   .getConstructor(Integer.class);
+           Student stu3 = constructor.newInstance(123);
+       }
+   }
+   ```
+
+   使用newInstance方法的这两种方式创建对象使用的就是Java的反射机制，事实上Class的newInstance方法内部调用的也是Constructor的newInstance方法。
+
+4. 使用Clone方法创建对象
+
+   无论何时我们调用一个对象的clone方法，JVM都会帮我们创建一个新的、一样的对象，特别需要说明的是，用clone方法创建对象的过程中并不会调用任何构造函数。关于如何使用clone方法以及浅克隆/深克隆机制，笔者已经在博文《 Java String 综述(下篇)》做了详细的说明。简单而言，要想使用clone方法，我们就必须先实现Cloneable接口并实现其定义的clone方法，这也是原型模式的应用。比如：
+
+   ```java
+   public class Student implements Cloneable{
+   
+       private int id;
+   
+       public Student(Integer id) {
+           this.id = id;
+       }
+   
+       @Override
+       protected Object clone() throws CloneNotSupportedException {
+           // TODO Auto-generated method stub
+           return super.clone();
+       }
+   
+       public static void main(String[] args) throws Exception {
+   
+           Constructor<Student> constructor = Student.class
+                   .getConstructor(Integer.class);
+           Student stu3 = constructor.newInstance(123);
+           Student stu4 = (Student) stu3.clone();
+       }
+   }
+   ```
+
+5. 使用(反)序列化机制创建对象
+
+   当我们反序列化一个对象时，JVM会给我们创建一个单独的对象，在此过程中，JVM并不会调用任何构造函数。为了反序列化一个对象，我们需要让我们的类实现Serializable接口，比如：
+
+   ```java
+   public class Student implements Cloneable, Serializable {
+   
+       private int id;
+   
+       public Student(Integer id) {
+           this.id = id;
+       }
+   
+       @Override
+       public String toString() {
+           return "Student [id=" + id + "]";
+       }
+   
+       public static void main(String[] args) throws Exception {
+   
+           Constructor<Student> constructor = Student.class
+                   .getConstructor(Integer.class);
+           Student stu3 = constructor.newInstance(123);
+   
+           // 写对象
+           ObjectOutputStream output = new ObjectOutputStream(
+                   new FileOutputStream("student.bin"));
+           output.writeObject(stu3);
+           output.close();
+   
+           // 读对象
+           ObjectInputStream input = new ObjectInputStream(new FileInputStream(
+                   "student.bin"));
+           Student stu5 = (Student) input.readObject();
+           System.out.println(stu5);
+       }
+   }
+   ```
+
+6. 完整实例
+
+   ```java
+   public class Student implements Cloneable, Serializable {
+   
+       private int id;
+   
+       public Student() {
+   
+       }
+   
+       public Student(Integer id) {
+           this.id = id;
+       }
+   
+       @Override
+       protected Object clone() throws CloneNotSupportedException {
+           // TODO Auto-generated method stub
+           return super.clone();
+       }
+   
+       @Override
+       public String toString() {
+           return "Student [id=" + id + "]";
+       }
+   
+       public static void main(String[] args) throws Exception {
+   
+           System.out.println("使用new关键字创建对象：");
+           Student stu1 = new Student(123);
+           System.out.println(stu1);
+           System.out.println("\n---------------------------\n");
+   
+   
+           System.out.println("使用Class类的newInstance方法创建对象：");
+           Student stu2 = Student.class.newInstance();    //对应类必须具有无参构造方法，且只有这一种创建方式
+           System.out.println(stu2);
+           System.out.println("\n---------------------------\n");
+   
+           System.out.println("使用Constructor类的newInstance方法创建对象：");
+           Constructor<Student> constructor = Student.class
+                   .getConstructor(Integer.class);   // 调用有参构造方法
+           Student stu3 = constructor.newInstance(123);   
+           System.out.println(stu3);
+           System.out.println("\n---------------------------\n");
+   
+           System.out.println("使用Clone方法创建对象：");
+           Student stu4 = (Student) stu3.clone();
+           System.out.println(stu4);
+           System.out.println("\n---------------------------\n");
+   
+           System.out.println("使用(反)序列化机制创建对象：");
+           // 写对象
+           ObjectOutputStream output = new ObjectOutputStream(
+                   new FileOutputStream("student.bin"));
+           output.writeObject(stu4);
+           output.close();
+   
+           // 读取对象
+           ObjectInputStream input = new ObjectInputStream(new FileInputStream(
+                   "student.bin"));
+           Student stu5 = (Student) input.readObject();
+           System.out.println(stu5);
+   
+       }
+   }/* Output: 
+           使用new关键字创建对象：
+           Student [id=123]
+   
+           ---------------------------
+   
+           使用Class类的newInstance方法创建对象：
+           Student [id=0]
+   
+           ---------------------------
+   
+           使用Constructor类的newInstance方法创建对象：
+           Student [id=123]
+   
+           ---------------------------
+   
+           使用Clone方法创建对象：
+           Student [id=123]
+   
+           ---------------------------
+   
+           使用(反)序列化机制创建对象：
+           Student [id=123]
+   *///:~
+   ```
+
+　从Java虚拟机层面看，除了使用new关键字创建对象的方式外，其他方式全部都是通过转变为invokevirtual指令直接创建对象的。
+
+
+
+### 方法调用
+
+[方法调用的讲解（涉及面试题）](https://blog.csdn.net/Alphr/article/details/105701933)
+
+1. `jvm`在运行中会把**符号引用**转化为方法的**直接引用**
+   - 对于在**编译期**就确定，且在**运行过程中**不会改变的目标方法是静态链接
+   - 被调用的方法在编译期无法确定下来，只能在**程序运行期间**才能将符号引用转化为对应的方法引用，我们成为动态链接，或者动态分派
+2. **重载**需要根据静态类型来判断参数从而选择方法，**重写**则是根据实际类型来选择方法
+
+### 静态分派、动态分派
+
+
+
+
+
+### 继承
 
 https://www.cnblogs.com/cj5785/p/10664866.html
 
@@ -1304,22 +2000,53 @@ https://www.cnblogs.com/cj5785/p/10664866.html
 2. **重点：重写**：在继承过程中，子类获得了父类的成员变量和方法，但有时父类的方法并不适合子类，此时子类可以重写父类的方法，这种现象称之为方法重写（override）。
 
    1. 重写遵循  “**两同两小一大**”：**方法名相同，参数列表相同；返回值类型比父类更小或相等，声明抛出的异常比父类更小或相同；访问权限比父类更大或相等。**
+
    2. 重写的方法必须一致，要么都是类方法，要么都是实例方法。
+
    3. 当在子类中重写了父类的方法时，**子类将无法访问父类中被覆盖的方法，只能通过super关键字进行调用**。
+
    4. 如果父类方法具有private访问权限，那么该方法对子类隐藏，子类无法访问该方法，也就无法重写该方法。
+
    5. 此时如果定义一个与父类方法表面上相同的重写方法，此时依旧不是方法重写，只是新定义了一个方法。
-   6. 方法重载（overload）和方法重写（override）区别在于**前者是指一个类里面的多个方法，后者是指父类与子类之间的方法**。***（overload语法查一下）***
-   7. 如果父类方法是public，那么即使不加@Override，只要格式上一样就会构成重写。如果要避免这种情况，就把父类的改成private。***这种说法对吗？***
 
-3. super用于限定**该对象**调用它从父类继承得到的实例变量或方法。与this一样，super也不能出现在static修饰的方法中。如果在构造器中使用super，那么**super用于限定该构造器初始化的是该对象从父类继承得到的实例变量**。这种情况常用于父类成员变量被子类覆盖而又需要使用父类的成员变量的时候。
+   6. 方法重载（overload）和方法重写（override）区别在于**前者是指一个类里面的多个方法，后者是指父类与子类之间的方法**。
 
-4. 在某个方法中访问名为a的成员变量，但却没有显式指定调用者，那么系统查找a的顺序为：当前方法的局部变量 -> 当前类的成员变量 -> 当前类父类的成员变量 ··· -> java.lang.Object，如果依旧找不到，那么编译将会报错。
+      **Overload**：
 
-5. 子类的所有成员变量在实例被创建时会分配内存空间，父类的成员变量也会分配内存空间。且二者不存在子类覆盖父类内存空间的问题。
+      1. 一个类中可以有多个方法具有相同的名字，但这些方法的参数必须不同，即参数个数、参数类型或参数顺序不同，返回类型可以相同也可以不同。
+         -  方法名称必须相同；
+         - 参数列表必须不同，即参数个数、参数类型或参数顺序中任有一个不同。
+         - 方法的返回类型可以相同也可以不同，对此无限制。
+         - 若仅满足方法的返回类型不同，不属于方法重载。
+         - 仅仅参数名称不同，或方法类型不同，不构成重载。例如，int min(int x, int y)与int min(int z, int y)不构成方法重载，同理，int min(int x, int y)与void min(int z, int y)不构成方法重载。
+         - 构造方法的名字与类名相同，且构造方法无返回类型，构造方法可以重载。
+         - 声明为final的方法不能被重载。
+         - 声明为static的方法不能被重载，但是能够被在此声明。
+         - main 方法也可以被重载。
 
-6. 子类不会获得父类的构造器，但子类可以调用父类构造器来初始化代码。此时使用super来完成。此时super必须位于子类构造器的第一行，**故super与this不可同时存在于一个构造器中**。无论是否使用super调用来执行父类构造器的初始化方法，子类构造器**总会**调用父类构造器一次，且都会在子类构造器方法体执行之前执行。***（仔细思考为什么super和this不兼容）***
+      2. 方法重载的目的：
 
-7. super关键字
+         - 方法重载的主要好处就是，不用为了对不同的参数类型或参数个数，而写多个函数。多个函数用同一个名字，但参数表，即参数的个数或(和)数据类型可以不同，调用的时候，虽然方法名字相同，但根据参数表可以自动调用对应的函数。
+         - 重载的最直接作用是方便了程序员可以根据不同的参数个数，顺序，类型，自动匹配方法，减少写过个函数名或方法名的重复步骤。
+
+      3. |  区别点  |   重写   |           重载           |
+         | :------: | :------: | :----------------------: |
+         | 参数列表 | 必须不同 |         必须相同         |
+         | 返回类型 |  无限制  |         必须相同         |
+         |   异常   | 可以修改 |    异常只能减少或删除    |
+         | 访问权限 | 可以修改 | 不可以降低方法的访问权限 |
+
+3. 如果父类方法是public，那么即使不加@Override，只要格式上一样就会构成重写。如果要避免这种情况，就把父类的改成private。***这种说法对吗？***
+
+4. super用于限定**该对象**调用它从父类继承得到的实例变量或方法。与this一样，super也不能出现在static修饰的方法中。如果在构造器中使用super，那么**super用于限定该构造器初始化的是该对象从父类继承得到的实例变量**。这种情况常用于父类成员变量被子类覆盖而又需要使用父类的成员变量的时候。
+
+5. 在某个方法中访问名为a的成员变量，但却没有显式指定调用者，那么系统查找a的顺序为：当前方法的局部变量 -> 当前类的成员变量 -> 当前类父类的成员变量 ··· -> java.lang.Object，如果依旧找不到，那么编译将会报错。
+
+6. 子类的所有成员变量在实例被创建时会分配内存空间，父类的成员变量也会分配内存空间。且二者不存在子类覆盖父类内存空间的问题。
+
+7. 子类不会获得父类的构造器，但子类可以调用父类构造器来初始化代码。此时使用super来完成。此时super必须位于子类构造器的第一行，**故super与this不可同时存在于一个构造器中**。无论是否使用super调用来执行父类构造器的初始化方法，子类构造器**总会**调用父类构造器一次，且都会在子类构造器方法体执行之前执行。***（仔细思考为什么super和this不兼容）***
+
+8. super关键字
 
    - super和this的用法相同
    - this代表本类引用***（细节来说应该是本对象）***
@@ -1330,7 +2057,7 @@ https://www.cnblogs.com/cj5785/p/10664866.html
    - 所有的子类构造函数**默认第一句**都是super();
    - 子类的所有的构造函数，默认都会访问父类中空参数的构造函数
 
-8. 函数覆盖(Override)
+9. 函数覆盖(Override)
 
    - 子类中出现与父类一模一样的方法时，会出现覆盖操作，也称为重写或者复写
    - 父类中的私有方法不可以被覆盖
@@ -1340,14 +2067,14 @@ https://www.cnblogs.com/cj5785/p/10664866.html
      - 静态只能覆盖静态
    - 覆盖的应用：当子类需要父类的功能，而功能主体子类有自己特有内容时，可以复写父类中的方法，这样，即沿袭了父类的功能，又定义了子类特有的内容
 
-9. 子类的实例化过程
+10. 子类的实例化过程
 
    - 子类中所有的构造函数默认都会访问父类中空参数的构造函数
    - 因为每一个构造函数的第一行都有一条默认的语句super();
    - 子类会具备父类中的数据，所以要先明确父类是如何对这些数据初始化的
    - 当父类中没有空参数的构造函数时，子类的构造函数必须通过 this或者super语句指定要访问的构造函数
 
-10. 继承与组合
+11. 继承与组合
 
     继承是实现复用的重要手段，但在使用继承的时候，却破坏了封装。组合也是实现复用的重要方式，却能提供更好的封装性
 
@@ -1358,7 +2085,7 @@ https://www.cnblogs.com/cj5785/p/10664866.html
     - 组合是把旧的对象作为新类的成员变量组合起来，用以实现复用的功能，用户可以看到新类的方法，而无法知晓被组合对象的方法
     - 继承和组合的区别：继承要表达的是一种`is-a`的关系，而组合表达的是一种`has-a`的关系
 
-11. final修饰符
+12. final修饰符
 
     final关键字用于修饰类，变量和方法，表示修饰的类、方法和变量不可改变。final修饰的变量不可被改变，一旦获取了初始值，该final变量的值就不能被重新赋值
 
