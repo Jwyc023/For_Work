@@ -2282,6 +2282,10 @@ public class ConstructorExample {
 
 ### 继承
 
+建议仔细看第二版
+
+#### 第一版
+
 https://www.cnblogs.com/cj5785/p/10664866.html
 
 1. 子类可以获得父类全部的成员变量和方法，而不能获得父类的构造器。如果没有显示指定一个类的父类，那么这个类默认继承java.lang.Object类，因此所有类都直接或间接继承自java.lang.Object，故可以调用java.lang.Object所定义的实例和方法。
@@ -2398,6 +2402,340 @@ https://www.cnblogs.com/cj5785/p/10664866.html
       - 仅为该类的成员变量提供getter方法，不要为该类的成员提供setter方法，因为普通方法无法修改final修饰的成员变量
       - 如果有必要，重写Object类的hashCode()和equals()方法。equals()方法更具关键成员变量来作为两个对象是否相等的标准，除此之外，还应该保证两个用equals()方法判断为相等的对象的hashCode()也想等
     - 缓存实例的不可变类：不可变类的实例状态不可改变，可以很方便的被多个对象所共享。如果可能，应该将已创建的不可变类的实例进行缓存
+
+#### 第二版
+
+[这个更好](https://blog.csdn.net/justloveyou_/article/details/52798666?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522163700171316780261960232%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fblog.%2522%257D&request_id=163700171316780261960232&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_v2~rank_v29-1-52798666.pc_v2_rank_blog_default&utm_term=%E7%BB%A7%E6%89%BF&spm=1018.2226.3001.4450)
+
+1. 成员变量的继承
+
+   当子类继承了某个类之后，便可以使用父类中的成员变量，但是并不是完全继承父类的所有成员变量。具体的原则如下：
+
+   - 子类能够继承父类的 public 和 protected 成员变量 ，不能够继承父类的 private 成员变量，但可以通过父类相应的getter/setter方法进行访问；对于protected，不同包的子类可以调用子类对象访问父类的东西，但是不能调用父类对象访问父类东西。
+
+   - 对于父类的包访问权限成员变量（package），如果子类和父类在同一个包下，则子类能够继承，否则，子类不能够继承；
+
+   - 对于子类可以继承的父类成员变量，如果在子类中出现了同名称的成员变量，则会发生 **隐藏** 现象，即子类的成员变量会屏蔽掉父类的同名成员变量。如果要在子类中访问父类中同名成员变量，需要使用super关键字来进行引用。（好像说的不太对）
+
+2. 成员方法的继承
+   同样地，当子类继承了某个类之后，便可以使用父类中的成员方法，但是子类并不是完全继承父类的所有方法。具体的原则如下：
+
+   - 子类能够继承父类的 public和protected成员方法 ，不能够继承父类的 private成员方法；
+
+   - 对于父类的包访问权限成员方法，如果子类和父类在同一个包下，则子类能够继承，否则，子类不能够继承；
+
+   - 对于子类可以继承的父类成员方法，如果在子类中出现了同名称的成员方法，则称为 **覆盖** ，即子类的成员方法会覆盖掉父类的同名成员方法。如果要在子类中访问父类中同名成员方法，需要使用super关键字来进行引用。
+
+```java
+class Person {
+    public String gentle = "Father";
+}
+
+public class Student extends Person {
+
+    public String gentle = "Son";
+
+    public String print(){
+        return super.gentle;       // 在子类中访问父类中同名成员变
+    }
+
+    public static void main(String[] args) throws ClassNotFoundException {
+        Student student = new Student();
+        System.out.println("##### " + student.gentle);
+        Person p = student;
+        System.out.println("***** " + p.gentle);    //隐藏：编译时决定，不会发生多态
+
+        System.out.println("----- " + student.print());
+        System.out.println("----- " + p.print());    //Error：Person 中未定义该方法
+    }
+}/* Output:
+        ##### Son
+        ***** Father
+        ----- Father
+ *///:~
+```
+
+**隐藏和覆盖是不同的。**  **隐藏** 是 **针对成员变量和静态方法** 的，而 **覆盖** 是 **针对普通方法** 的。经测试，static方法也是依据编译时类型决定。
+
+3. 基类的初始化与构造器
+
+   我们知道，导出类就像是一个与基类具有相同接口的新类，或许还会有一些额外的方法和域。但是，继承并不只是复制基类的接口。当创建一个导出类对象时，该对象会包含一个基类的子对象。这个子对象与我们用基类直接创建的对象是一样的。二者的区别在于，后者来自于外部，而基类的子对象被包装在导出类对象的内部。
+   　　
+   因此，对基类子对象的正确初始化是至关重要的，并且Java也提供了相应的方法来保证这一点： 导出类必须在构造器中调用基类构造器来执行初始化，而基类构造器具有执行基类初始化所需的所有知识和能力。当基类含有默认构造器时，Java会自动在导出类的构造器插入对该基类默认构造器的调用，因为编译器不必考虑要传递什么样的参数的问题。但是，**若父类不含有默认构造器**，或者导出类想调用一个带参数的父类构造器，那么在导出类的构造器中就**必须**使用 super 关键字显式的进行调用相应的基类的构造器，并且该调用语句必是导出类构造器的第一条语句。
+
+##### 组合，继承，代理
+
+在Java中，**组合、继承和代理三种技术都可以实现代码的复用。**
+
+1. 组合（has-a）
+
+   通过在新的类中加入现有类的对象即可实现组合。即，新的类是由现有类的对象所组成。该技术通常用于想在新类中使用现有类的功能而非它的接口这种情形。也就是说，在新类中嵌入某个对象，让其实现所需要的功能，但新类的用户看到的只是为新类所定义的接口，而非所嵌入对象的接口。
+
+2. 继承（is-a）
+
+   继承可以使我们按照现有类的类型来创建新类。即，我们采用现有类的形式并在其中添加新代码。通常，**这意味着我们在使用一个通用类，并为了某种特殊需要而将其特殊化。**本质上，**组合和继承都允许在新的类中放置子对象，组合是显式地这样做，而继承则是隐式地做。**
+
+3. 代理（继承与组合之间的一种中庸之道：像组合一样使用已有类的功能，同时像继承一样使用已有类的接口）
+
+   代理是继承与组合之间的一种中庸之道，Java并没有提供对它的直接支持。在代理中，我们将一个成员对象置于所要构造的类中（就像组合），但与此同时我们在新类中暴露了该成员对象的接口/方法（就像继承）。
+
+```java
+// 控制模块
+public class SpaceShipControls {
+    void up(int velocity) {
+    }
+
+    void down(int velocity) {
+    }
+
+    void left(int velocity) {
+    }
+
+    void right(int velocity) {
+    }
+
+    void forward(int velocity) {
+    }
+
+    void back(int velocity) {
+    }
+
+    void turboBoost() {
+    }
+}
+```
+
+太空船需要一个控制模块，那么，**构造太空船的一种方式是使用继承：**
+
+```java
+public class SpaceShip extends SpaceShipControls { 
+    private String name; 
+    public SpaceShip(String name) { this.name = name; } 
+    public String toString() { return name; } 
+    public static void main(String[] args) { 
+        SpaceShip protector = new SpaceShip("NSEA Protector"); 
+        protector.forward(100); 
+    } 
+}
+```
+
+然而，SpaceShip 并不是真正的 SpaceShipControls 类型，即便你可以“告诉” SpaceShip 向前运动（forward()）。更准确的说，SpaceShip 包含 SpaceShipControls ，与此同时， SpaceShipControls 的所有方法在 SpaceShip 中都暴露出来。 代理（SpaceShip 的运动行为由 SpaceShipControls 代理完成） 正好可以解决这种问题：
+
+```java
+// SpaceShip 的行为由 SpaceShipControls 代理完成
+public class SpaceShipDelegation { 
+    private String name; 
+    private SpaceShipControls controls = new SpaceShipControls(); 
+
+    public SpaceShipDelegation(String name) { 
+        this.name = name; 
+    } 
+
+    // 代理方法: 
+    public void back(int velocity) { 
+        controls.back(velocity); 
+    } 
+    public void down(int velocity) { 
+        controls.down(velocity); 
+    } 
+    public void forward(int velocity) { 
+        controls.forward(velocity); 
+    } 
+    public void left(int velocity) { 
+        controls.left(velocity); 
+    } 
+    public void right(int velocity) { 
+        controls.right(velocity); 
+    } 
+    public void turboBoost() { 
+        controls.turboBoost(); 
+    } 
+    public void up(int velocity) { 
+        controls.up(velocity); 
+    } 
+
+    public static void main(String[] args) { 
+        SpaceShipDelegation protector = new SpaceShipDelegation("NSEA Protector"); 
+        protector.forward(100); 
+    } 
+}
+```
+
+实际上，**我们使用代理时可以拥有更多的控制力，因为我们可以选择只提供在成员对象中方法的某个子集。**
+
+##### final
+
+许多编程语言都需要某种方法来向编译器告知一块数据是恒定不变的。有时，数据的恒定不变是很有用的，比如：
+
+- 一个永不改变的编译时常量；
+
+	- 一个在运行时被初始化的值，而你不希望它被改变。
+
+对于编译期常量这种情况，编译器可以将该常量值带入任何可能用到它的计算式中，也即是说，可以在编译时执行计算式，这减轻了一些运行时负担。在Java中，这类常量必须满足两个条件：
+
+- 是基本类型，并且用final修饰；
+- 在对这个常量进行定义的时候，必须对其进行赋值。
+
+此外，当用final修饰对象引用时，final使其**引用**恒定不变。一旦引用被初始化指向一个对象，就无法再把它指向另一个对象。然而，**对象本身是可以被修改的，这同样适用于数组，因为它也是对象**。
+
+特别需要注意的是，我们不能因为某数据是final的，就认为在编译时就可以知道它的值。例如：final int i4 = rand.nextInt(20);
+
+1. 空白final
+
+   Java允许生成 空白final , 即：声明final但又未给定初值的域。但无论什么情况，编译器都会确保空白final在使用前被初始化。但是，空白final在关键字final的使用上提供了更大的灵活性: 一个类中的 final域 就可以做到根据对象而有所不同，却又保持其恒定不变的特性。例如，
+
+   <img src="D:\学习用\找工作\For_Work\Github面试题\图片\blank final1.png" alt="blank final1" style="zoom: 80%;" />
+
+   必须在域的定义处或者每个构造器中使用表达式对final进行赋值，这正是 final域 在使用前总是被初始化的原因所在。
+
+2. final参数
+
+   final参数 主要应用于局部内部类和匿名内部类中，更多详细介绍请移步我的另一篇文章：[Java 内部类综述](http://blog.csdn.net/justloveyou_/article/details/53245561)。
+
+3. final方法
+
+   final关键字作用于方法时，用于锁定方法，以防任何继承类修改它的含义。这是出于设计的考虑：想要确保在继承中使方法行为保持不变，并且不会被覆盖。
+
+   对于成员方法，只有在明确禁止覆盖时，才将方法设为final的。
+
+4. final类
+
+   当将某个类定义为final时，就表明你不打算继承该类，而且也不允许别人这样做。换句话说，出于某种考虑，你对该类的设计永不需要做任何变动，或者出于安全考虑，你不希望它有子类。
+   　　
+   需要注意的是，final类的域可以根据实际情况选择是否为final的。不论是否被定义为final，相同的规则都适用于定义final的域。然而，由于final类禁止继承，所以final类中的**所有方法都隐式指定为final**的，因为无法覆盖它们。在final类中可以给方法添加final修饰，但这不会增添任何意义。
+
+5.  final与private
+
+   类中所有的private方法都**隐式地指定为final**的。由于无法取用private方法，所以也就无法覆盖它。可以对private方法添加final修饰，但这并不会给该方法添加任何额外的意义。
+
+   特别需要注意的是，覆盖只有在某方法是基类接口的一部分时才会出现。如果一个方法是private的，它就不是基类接口中的一部分，而仅仅是一些隐藏于类中的程序代码。但若在导出类中以相同的名称生成一个非private方法，此时我们并没有覆盖该方法，仅仅是**生成了一个新的方法**。由于private方法无法触及并且能有效隐藏，所以除了把它看成是由于它所归属的类的组织结构的原因而存在外，其他任何情况都不需要考虑它。
+
+6.  final 与 static
+
+   static 修饰变量时，其 具有默认值， 且 可改变， 且其 只能修饰成员变量和成员方法。
+
+   一个 static final域 只占据一段不能改变的存储空间，且只能在声明时进行初始化。**因为其是 final 的，因而没有默认值**；且又是static的，因此在类没有实例化时，其已被赋值，所以只能在声明时初始化。
+
+##### 多态
+
+我们知道 继承允许将对象视为它自己本身的类型或其基类型加以处理，从而使同一份代码可以毫无差别地运行在这些不同的类型之上。其中，多态方法调用允许一种类型表现出与其他相似类型之间的区别，只要这些类型由同一个基类所导出。所以，多态的作用主要体现在两个方面：
+
+- 多态通过分离做什么和怎么做，从另一个角度将接口和实现分离开来，从而实现将改变的事物与未变的事物分离开来；
+- 消除类型之间的耦合关系（类似的，在Java中，泛型也被用来消除类或方法与所使用的类型之间的耦合关系）。
+
+1. 实现机制
+
+   我们知道方法的覆盖很好的体现了多态，但是当使用一个基类引用去调用一个覆盖方法时，到底该调用哪个方法才正确呢？
+
+   将一个方法调用同一个方法主体关联起来被称作绑定。若在程序执行前进行绑定，叫做 前期绑定 。但是，显然，这种机制并不能解决上面的问题，因为在编译时编译器并不知道上述基类引用到底指向哪个对象。解决的办法就是后期绑定(动态绑定/运行时绑定)：在运行时根据对象的具体类型进行绑定。
+
+   事实上，在Java中，除了static方法和final方法（private方法属于final方法）外，**其他所有的方法都是后期绑定**。这样，一个方法声明为final后，可以防止其他人覆盖该方法，但更重要一点是：这样做可以有效地关闭动态绑定，或者说，告诉编译器不需要对其进行动态绑定，以便为final方法调用生成更有效的代码。
+
+   基于动态绑定机制，我们就可以编写只与基类打交道的代码了，并且这些代码对所有的导出类都可以正确运行。或者说，发送消息给某个对象，让该对象去断定该做什么事情。
+
+2. 向下转型与运行时类型识别
+
+   由于向上转型会丢失具体的类型信息，所以我们可能会想，通过向下转型也应该能够获取类型信息。然而，我们知道向上转型是安全的，因为基类不会具有大于导出类的接口。因此，我们通过基类接口发送的消息都能被接受，但是对于向下转型，我们就无法保证了。
+
+   要解决这个问题，必须有某种方法来确保向下转型的正确性，使我们不至于贸然转型到一种错误的类型，进而发出该对象无法接受的消息。在Java中，运行时类型识别（RTTI）机制可以处理这个问题，它保证Java中所有的转型都会得到检查。所以，即使我们只是进行一次普通的加括弧形式的类型转换，再进入运行期时仍会对其进行检查，以便保证它的确是我们希望的哪种类型。如果不是，我们就会得到一个类型转换异常：ClassCastException。
+
+##### 类加载及初始化顺序
+
+首先，必须指出类加载及初始化顺序为：父类静态代码块->子类静态代码块->父类非静态代码块->父类构造函数->子类非静态代码块->子类构造函数
+
+即，首先，初始化父类中的静态成员变量和静态代码块，按照在程序中出现的顺序初始化；然后，初始化子类中的静态成员变量和静态代码块，按照在程序中出现的顺序初始化；其次，初始化父类的普通成员变量和代码块，再执行父类的构造方法；最后，初始化子类的普通成员变量和代码块，再执行子类的构造方法。
+　
+我们通过下面一段程序说明：
+
+```java
+class SuperClass {
+    private static String STR = "Super Class Static Variable";
+    static {
+        System.out.println("Super Class Static Block:" + STR);
+    }
+
+    public SuperClass() {
+        System.out.println("Super Class Constructor Method");
+    }
+
+    {
+        System.out.println("Super Class Block");
+    }
+
+}
+
+public class ObjectInit extends SuperClass {
+    private static String STR = "Class Static Variable";
+    static {
+        System.out.println("Class Static Block:" + STR);
+    }
+
+    public ObjectInit() {
+        System.out.println("Constructor Method");
+    }
+
+    {
+        System.out.println("Class Block");
+    }
+
+    public static void main(String[] args) {
+        @SuppressWarnings("unused")
+        ObjectInit a = new ObjectInit();
+    }
+}/* Output:
+        Super Class Static Block:Super Class Static Variable
+        Class Static Block:Class Static Variable
+        Super Class Block
+        Super Class Constructor Method
+        Class Block
+        Constructor Method
+ *///:~ 
+
+```
+
+在运行该程序时，所发生的第一件事就是试图访问 ObjectInit.main() 方法（一个static方法），于是加载器开始启动并加载 ObjectInit类。在对其加载时，编译器注意到它有一个基类（这由关键字extends得知），于是先进行加载其基类。如果该基类还有其自身的基类，那么先加载这个父父基类，如此类推（本例中是先加载 Object类 ，再加载 SuperClass类 ，最后加载 ObjectInit类 ）。接下来，根基类中的 static域 和 static代码块 会被执行，然后是下一个导出类，以此类推这种方式很重要，因为导出类的static初始化可能会依赖于基类成员能否被正确初始化。**到此为止，所有的类都已加载完毕，对象就可以创建了**。首先，初始化根基类所有的普通成员变量和代码块，然后执行根基类构造器以便创建一个基对象，然后是下一个导出类，依次类推，直到初始化完成。
+
+##### 重载、覆盖与隐藏
+
+1. 重载与覆盖
+
+   1. 定义与区别
+
+      重载：如果在一个类中定义了多个同名的方法，但它们有不同的参数（包含三方面：参数个数、参数类型和参数顺序），则称为方法的重载。其中，不能通过访问权限、返回类型和抛出异常进行重载。
+
+      覆盖：子类中定义的某个方法与其父类中某个方法具有相同的方法签名（包含相同的名称和参数列表），则称为方法的覆盖。子类对象使用这个方法时，将调用该方法在子类中的定义，对它而言，父类中该方法的定义被屏蔽了。
+
+      总的来说，重载和覆盖是Java多态性的不同表现。前者是一个类中多态性的一种表现，后者是父类与子类之间多态性的一种表现。
+
+   2. 实现机制
+
+      **重载是一种参数多态机制**，即通过方法参数的差异实现多态机制。并且，其属于一种 **静态绑定机制**，在编译时已经知道具体执行哪个方法。 
+
+      **覆盖是一种动态绑定的多态机制。**即，在父类与子类中具有相同签名的方法具有不同的具体实现，至于最终执行哪个方法 **根据运行时的实际情况而定。**
+
+   3. 总结
+
+      我们应该注意以下几点：
+
+      - **final 方法不能被覆盖；**
+      - **子类不能覆盖父类的private方法，否则，只是在子类中定义了一个与父类重名的全新的方法，而不会有任何覆盖效果。**
+
+2. 覆盖与隐藏
+
+   1. 定义
+
+      **覆盖**：指 **运行时系统调用当前对象引用** **运行时类型** 中定义的方法 ，属于 **运行期绑定。**
+
+      **隐藏**：指**运行时系统调用当前对象引用** **编译时类型**  中定义的方法，即 **被声明或者转换为什么类型就调用对应类型中的方法或变量**，属于**编译期绑定。**
+
+   2. 范围
+
+      **覆盖**：**只针对实例方法；** 
+      **隐藏**：**只针对静态方法和成员变量**。
+
+   3. 小结
+      - **子类的实例方法不能隐藏父类的静态方法，同样地，子类的静态方法也不能覆盖父类的实例方法，否则编译出错；**
+      - **无论静态成员还是实例成员，都能被子类同名的成员变量所隐藏。** 
 
 
 
