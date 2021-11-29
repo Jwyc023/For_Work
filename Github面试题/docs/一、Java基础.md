@@ -167,6 +167,9 @@ public native int hashCode();
 ## 如果重写equals不重写hashCode会怎样
 - 两个值不同的对象的hashCode一定不一样，那么执行equals，结果为true，HashSet或HashMap的键会放入值相同的对象。
 # 1.6 String&StringBuffer&StringBuilder
+
+这里仅涉及部分题目，更下面有详细解释。
+
 - 都是final类，不允许继承；
 - String长度不可变，StringBuffer、StringBuilder长度可变；
 
@@ -376,10 +379,10 @@ public native String intern();
 
 - 实例一：
 
-    - String s = new String("1");
-s.intern();
-String s2 = "1";
-System.out.println(s == s2);// false
+    String s = new String("1");
+    s.intern();
+    String s2 = "1";
+    System.out.println(s == s2);// false
 
 String s3 = new String("1") + new String("1");
 s3.intern();
@@ -2569,7 +2572,7 @@ public class SpaceShipDelegation {
 
 - 一个永不改变的编译时常量；
 
-	- 一个在运行时被初始化的值，而你不希望它被改变。
+- 一个在运行时被初始化的值，而你不希望它被改变。
 
 对于编译期常量这种情况，编译器可以将该常量值带入任何可能用到它的计算式中，也即是说，可以在编译时执行计算式，这减轻了一些运行时负担。在Java中，这类常量必须满足两个条件：
 
@@ -2739,6 +2742,527 @@ public class ObjectInit extends SuperClass {
 
 
 
+
+
+# String详解
+
+## Java 内存模型 与 常量池
+
+1. Java内存模型
+
+   1. 程序计数器
+
+      多线程时，当线程数超过CPU数量或CPU内核数量，线程之间就要根据时间片轮询抢夺CPU时间资源。因此，每个线程要有一个独立的程序计数器，记录下一条要运行的指令，其为线程私有的内存区域。如果执行的是JAVA方法，计数器记录正在执行的java字节码地址，如果执行的是native方法，则计数器为空。
+
+   2. 虚拟机栈
+
+      线程私有的，与线程在同一时间创建，是管理JAVA方法执行的内存模型。栈中主要存放一些基本类型的变量数据（int, short, long, byte, float, double, boolean, char）和对象引用。每个方法执行时都会创建一个桢栈来存储方法的的变量表、操作数栈、动态链接方法、返回值、返回地址等信息。栈的大小决定了方法调用的可达深度（递归多少层次，或嵌套调用多少层其他方法，-Xss参数可以设置虚拟机栈大小）。栈的大小可以是固定的，或者是动态扩展的。如果请求的栈深度大于最大可用深度，则抛出stackOverflowError；如果栈是可动态扩展的，但没有内存空间支持扩展，则抛出OutofMemoryError。使用jclasslib工具可以查看class类文件的结构。
+
+   3. 本地方法区
+
+      和虚拟机栈功能相似，但管理的不是JAVA方法，是本地方法，本地方法是用 C 实现的。
+
+   4. JAVA堆
+
+      线程共享的，存放所有对象实例和数组，是垃圾回收的主要区域。堆是一个运行时数据区,类的对象从中分配空间,这些对象通过new、newarray、 anewarray 和 multianewarray等指令建立，它们不需要程序代码来显式的释放。堆可以分为新生代和老年代(tenured)。新生代用于存放刚创建的对象以及年轻的对象，如果对象一直没有被回收，生存得足够长，老年对象就会被移入老年代。新生代又可进一步细分为eden(伊甸园)、survivorSpace0(s0,from space)、survivorSpace1(s1,tospace)。刚创建的对象都放入eden,s0和s1都至少经过一次GC并幸存。如果幸存对象经过一定时间仍存在，则进入老年代(tenured)。
+
+   5. 方法区
+
+      线程共享的，用于存放被虚拟机加载的类的元数据信息：如**常量、静态变量、即时编译器编译后的代码**，也成为永久代。如果hotspot虚拟机确定一个类的定义信息不会被使用，也会将其回收。回收的基本条件至少有：所有该类的实例被回收，而且装载该类的ClassLoader被回收。
+
+   6. 常量池
+
+      常量池属于类信息的一部分，而类信息反映到 JVM 内存模型中对应于方法区，也就是说，常量池位于方法区。常量池主要存放两大常量：**字面量(Literal) 和 符号引用(Symbolic References)**。其中，字面量主要包括**字符串字面量**，**整型字面量** 和 **声明为final的常量值**等；而符号引用则属于编译原理方面的概念，包括了下面三类常量：
+
+      - 类和接口的全限定名
+
+      - 字段的名称和描述符
+
+      - 方法的名称和描述符
+
+        
+
+## 变量与常量
+
+我们一般把**内存地址不变,值可以改变的东西称为变量**，换句话说，在内存地址不变的前提下内存的内容是可变的，例如：
+
+```java
+public class String_2 {  
+    public static void f(){  
+        Human_1 h = new Human_1(1,30);  
+        Human_1 h2 = h; 
+        System.out.printf("h: %s\n", h.toString());   
+        System.out.printf("h2: %s\n\n", h.toString());   
+
+        h.id = 3;  
+        h.age = 32;  
+        System.out.printf("h: %s\n", h.toString());   
+        System.out.printf("h2: %s\n\n", h.toString());   
+
+        System.out.println( h == h2 );   // true : 引用值不变，即对象内存底子不变，但内容改变
+    }
+}  
+```
+
+我们一般把**若内存地址不变, 则值也不可以改变的东西称为常量**，典型的 String 就是不可变的，所以称之为 常量(constant)。此外，我们可以通过final关键字来定义常量，但严格来说，只有基本类型被其修饰后才是常量（对基本类型来说是其值不可变，而对于对象变量来说其引用不可再变）。
+
+```java
+final int i = 5;
+```
+
+
+
+## String 定义与基础
+
+1. 字符串声明
+
+   由 JDK 中关于String的声明可以知道：
+
+   不同字符串可能共享同一个底层char数组，例如字符串 String s=”abc” 与 s.substring(1) 就共享同一个char数组：char[] c = {‘a’,’b’,’c’}。其中，前者的 offset 和 count 的值分别为0和3，后者的 offset 和 count 的值分别为1和2。
+   offset 和 count 两个成员变量不是多余的，比如，在执行substring操作时。
+
+2. String不属于八种基本数据类型，String 的实例是一个对象。因为对象的默认值是null，所以String的默认值也是null
+
+3. new String() 和 new String(“”)都是声明一个**新的空字符串**，是空串不是null; 、
+
+## String 的不可变性
+
+1. 什么是不可变对象？
+
+   众所周知，在Java中，String类是不可变类 (基本类型的包装类都是不可改变的) 的典型代表，也是Immutable设计模式的典型应用。String变量一旦初始化后就不能更改，禁止改变对象的状态，从而增加共享对象的坚固性、减少对象访问的错误，同时还避免了在多线程共享时进行同步的需要。那么，到底什么是不可变的对象呢？ 可以这样认为：如果一个对象，在它创建完成之后，不能再改变它的状态，那么这个对象就是不可变的。不能改变状态指的是不能改变对象内的成员变量，包括：
+
+   - **基本数据类型的值不能改变;**
+
+   - **引用类型的变量不能指向其他的对象;**
+
+   - **引用类型指向的对象的状态也不能改变;**
+
+   除此之外，还应具有以下特点：
+
+   - **除了构造函数之外，不应该有其它任何函数（至少是任何public函数）修改任何成员变量;**
+   - **任何使成员变量获得新值的函数**都应该**将新的值保存在新的对象中，而保持原来的对象不被修改。**
+
+2. 区分引用和对象
+
+   对于Java初学者， 对于String是不可变对象总是存有疑惑。看下面代码：
+
+   ```java
+   String s = "ABCabc";
+   System.out.println("s = " + s);    // s = ABCabc
+   
+   s = "123456";
+   System.out.println("s = " + s);    // s = 123456
+   ```
+
+   首先创建一个String对象s，然后让s的值为“ABCabc”， 然后又让s的值为“123456”。 从打印结果可以看出，s的值确实改变了。那么怎么还说String对象是不可变的呢？ 其实这里存在一个误区： **s 只是一个String对象的引用**，并不是对象本身。对象在内存中是一块内存区，成员变量越多，这块内存区占的空间越大。引用只是一个 4 字节的数据，里面存放了它所指向的对象的地址，通过这个地址可以访问对象。 也就是说，s只是一个引用，它指向了一个具体的对象，当s=“123456”; 这句代码执行过之后，又创建了一个新的对象“123456”， 而引用s重新指向了这个新的对象，原来的对象“ABCabc”还在内存中存在，并没有改变。内存结构如下图所示：
+
+   <img src="D:\学习用\找工作\For_Work\Github面试题\图片\对象和对象的引用1.jpg" alt="对象和对象的引用1" style="zoom:67%;" />
+
+   Java和C++的一个不同点是，**在 Java 中，引用是访问、操纵对象的唯一方式： 我们不可能直接操作对象本身，所有的对象都由一个引用指向，必须通过这个引用才能访问对象本身，**包括获取成员变量的值，改变对象的成员变量，调用对象的方法等。而在C++中存在引用，对象和指针三个东西，这三个东西都可以访问对象。其实，Java中的引用和C++中的指针在概念上是相似的，他们都是存放的对象在内存中的地址值，只是在Java中，引用丧失了部分灵活性，比如Java中的引用不能像C++中的指针那样进行加减运算。
+
+3. 为什么String对象不可变
+
+   在Java中，String类其实就是对字符数组的封装。JDK6中， value是String封装的数组，offset是String在这个value数组中的起始位置，count是String所占的字符的个数。在JDK7中，只有一个value变量，也就是value中的所有字符都是属于String这个对象的。这个改变不影响本文的讨论。 除此之外还有一个hash成员变量，是该String对象的哈希值的缓存，这个成员变量也和本文的讨论无关。在Java中，数组也是对象（可以参考我之前的文章java中数组的特性）。 所以value也只是一个引用，它指向一个真正的数组对象。其实执行了String s = “ABCabc”; 这句代码之后，真正的内存布局应该是这样的：
+
+   ![String本质](D:\学习用\找工作\For_Work\Github面试题\图片\String本质.jpg)
+
+   value，offset和count这三个变量都是 private 的，并且没有提供setValue，setOffset和setCount等公共方法来修改这些值，所以在String类的外部无法修改String。也就是说一旦初始化就不能修改， 并且在String类的外部不能访问这三个成员。此外，value，offset和count这三个变量都是**final**的， 也就是说在String类内部，一旦这三个值初始化了， 也不能被改变。所以，可以认为String对象是不可变的了。（变量全是final的）
+
+   那么在String中，明明存在一些方法，调用他们可以得到改变后的值。这些方法包括substring， replace， replaceAll， toLowerCase等。例如如下代码：
+
+   ```java
+   String a = "ABCabc";
+   System.out.println("a = " + a);    // a = ABCabc
+   
+   a = a.replace('A', 'a');
+   System.out.println("a = " + a);    //a = aBCabc
+   ```
+
+   那么a的值看似改变了，其实也是同样的误区。再次说明， a只是一个引用， 不是真正的字符串对象，在调用a.replace(‘A’,  ‘a’)时， 方法内部创建了一个新的String对象，并把这个心的对象重新赋给了引用a。String中replace方法的源码可以说明问题。
+
+   我们可以自己查看其他方法，都是在方法内部重新创建新的String对象，并且返回这个新的对象，原来的对象是不会被改变的。这也是为什么像replace， substring，toLowerCase等方法都存在返回值的原因。也是为什么像下面这样调用不会改变对象的值：
+
+   ```java
+   String ss = "123456";
+   System.out.println("ss = " + ss);     // ss = 123456
+   
+   
+   ss.replace('1', '0');
+   System.out.println("ss = " + ss);     //ss = 123456
+   ```
+
+4. String对象真的不可变吗？
+
+   从上文可知String的成员变量是 private final 的，也就是初始化之后不可改变。那么在这几个成员中， value比较特殊，因为他是一个引用变量，而不是真正的对象。value是final修饰的，也就是说final不能再指向其他数组对象，那么我能改变value指向的数组吗？ 比如，将数组中的某个位置上的字符变为下划线“_”。 至少在我们自己写的普通代码中不能够做到，因为我们根本不能够访问到这个value引用，更不能通过这个引用去修改数组，那么，用什么方式可以访问私有成员呢？ 没错，用反射，可以反射出String对象中的value属性， 进而改变通过获得的value引用改变数组的结构。下面是实例代码： 
+
+   ```java
+   public static void testReflection() throws Exception {
+   
+       //创建字符串"Hello World"， 并赋给引用s
+       String s = "Hello World"; 
+   
+       System.out.println("s = " + s); //Hello World
+   
+       //获取String类中的value字段
+       Field valueFieldOfString = String.class.getDeclaredField("value");
+   
+       //改变value属性的访问权限
+       valueFieldOfString.setAccessible(true);
+   
+       //获取s对象上的value属性的值
+       char[] value = (char[]) valueFieldOfString.get(s);
+   
+       //改变value所引用的数组中的第5个字符
+       value[5] = '_';
+   
+       System.out.println("s = " + s);  //Hello_World
+   }
+   ```
+
+   在这个过程中，s始终引用的同一个String对象，但是再反射前后，这个String对象发生了变化， 也就是说，通过反射是可以修改所谓的“不可变”对象的。但是一般我们不这么做。这个反射的实例还可以说明一个问题：如果一个对象，他组合的其他对象的状态是可以改变的，那么这个对象很可能不是不可变对象。例如一个Car对象，它组合了一个Wheel对象，虽然这个Wheel对象声明成了private final 的，但是这个Wheel对象内部的状态可以改变， 那么就不能很好的保证Car对象不可变。
+
+   
+
+## String 对象创建方式
+
+1. 字面值形式： JVM会自动根据字符串常量池中字符串的实际情况来决定是否创建新对象(要么不创建，要么创建一个对象，关键要看常量池中有没有)
+
+   ```
+   String s = "abc";
+   ```
+
+   等价于
+
+   ```
+   char data[] = {'a', 'b', 'c'};
+   String str = new String(data);
+   ```
+
+   该种方式先在栈中创建一个对String类的对象引用变量s，然后去查找 “abc”是否被保存在字符串常量池中。若”abc”已经被保存在字符串常量池中，则在字符串常量池中找到值为”abc”的对象，然后将s 指向这个对象; 否则，在 堆 中创建char数组 data，然后在 堆 中创建一个String对象object，它由 data 数组支持，紧接着这个String对象 object 被存放进字符串常量池，最后将 s 指向这个对象。
+
+   例如
+
+   ```
+       private static void test01(){  
+       String s0 = "kvill";        // 1
+       String s1 = "kvill";        // 2
+       String s2 = "kv" + "ill";     // 3
+   
+       System.out.println(s0 == s1);       // true  
+       System.out.println(s0 == s2);       // true  
+   }
+   ```
+
+   执行第 1 行代码时，“kvill” 入池并被 s0 指向；执行第 2 行代码时，s1 从常量池查询到” kvill” 对象并直接指向它；所以，s0 和 s1 指向同一对象。 由于 ”kv” 和 ”ill” 都是字符串字面值，所以 s2 在编译期由编译器直接解析为 “kvill”，所以 s2 也是常量池中”kvill”的一个引用。 所以，我们得出 s0==s1==s2;
+
+2. 通过 new 创建字符串对象 : 一概在堆中创建新对象，无论字符串字面值是否相等 (要么创建一个，要么创建两个对象，关键要看常量池中有没有)
+
+   ```
+   String s = new String("abc");  
+   ```
+
+   等价于：
+
+   ```
+   1、String original = "abc"; 
+   2、String s = new String(original);
+   ```
+
+   所以，通过 new 操作产生一个字符串（“abc”）时，会先去常量池中查找是否有“abc”对象，如果没有，则创建一个此字符串对象并放入常量池中。然后，在堆中再创建“abc”对象，并返回该对象的地址。所以，对于 String str=new String(“abc”)：如果常量池中原来没有”abc”，则会产生两个对象（一个在常量池中，一个在堆中）；否则，产生一个对象。
+
+   用 new String() 创建的字符串对象位于堆中，而不是常量池中。它们有自己独立的地址空间，例如，
+
+   ```java
+       private static void test02(){  
+       String s0 = "kvill";  
+       String s1 = new String("kvill");  
+       String s2 = "kv" + new String("ill");  
+   
+       String s = "ill";
+       String s3 = "kv" + s;    
+   
+   
+       System.out.println(s0 == s1);       // false  
+       System.out.println(s0 == s2);       // false  
+       System.out.println(s1 == s2);       // false  
+       System.out.println(s0 == s3);       // false  
+       System.out.println(s1 == s3);       // false  
+       System.out.println(s2 == s3);       // false  
+   }  
+   ```
+
+   例子中，s0 还是常量池中”kvill”的引用，s1 指向运行时创建的新对象”kvill”，二者指向不同的对象。对于s2，因为后半部分是 new String(“ill”)，所以无法在编译期确定，在运行期会 new 一个 StringBuilder 对象， 并由 StringBuilder 的 append 方法连接并调用其 toString 方法返回一个新的 “kvill” 对象。此外，s3 的情形与 s2 一样，均含有编译期无法确定的元素。因此，以上四个 “kvill” 对象互不相同。StringBuilder 的 toString 为：
+
+   ```
+    public String toString() {
+       return new String(value, 0, count);   // new 的方式创建字符串
+    }
+   ```
+
+   构造函数 String(String original) 的源码为：
+
+   ```java
+       /**
+        * 根据源字符串的底层数组长度与该字符串本身长度是否相等决定是否共用支撑数组
+        */
+       public String(String original) {
+           int size = original.count;
+           char[] originalValue = original.value;
+           char[] v;
+           if (originalValue.length > size) {
+               // The array representing the String is bigger than the new
+               // String itself. Perhaps this constructor is being called
+               // in order to trim the baggage, so make a copy of the array.
+               int off = original.offset;
+               v = Arrays.copyOfRange(originalValue, off, off + size);  // 创建新数组并赋给 v
+           } else {
+               // The array representing the String is the same
+               // size as the String, so no point in making a copy.
+               v = originalValue;
+           }
+   
+           this.offset = 0;
+           this.count = size;
+           this.value = v;
+       }
+   ```
+
+   由源码可以知道，**所创建的对象在大多数情形下会与源字符串 original 共享 char数组 。**
+
+## 字符串常量池
+
+1. 字符串池
+
+   字符串的分配，和其他的对象分配一样，耗费高昂的时间与空间代价。JVM为了提高性能和减少内存开销，在实例化字符串字面值的时候进行了一些优化。为了减少在JVM中创建的字符串的数量，字符串类维护了一个字符串常量池，每当以字面值形式创建一个字符串时，JVM会首先检查字符串常量池：如果字符串已经存在池中，就返回池中的实例引用；如果字符串不在池中，就会实例化一个字符串并放到池中。Java能够进行这样的优化是因为字符串是不可 变的，可以不用担心数据冲突进行共享。 例如：
+
+   ```java
+   public class Program
+   {
+       public static void main(String[] args)
+       {
+          String str1 = "Hello";  
+          String str2 = "Hello"; 
+          System.out.print(str1 == str2);   // true
+       }
+   }
+   ```
+
+   一个初始为空的字符串池，它由类 String 私有地维护。当以字面值形式创建一个字符串时，总是先检查字符串池是否含存在该对象，若存在，则直接返回。此外，通过 new 操作符创建的字符串对象不指向字符串池中的任何对象，在堆里。
+
+2. 手动入池
+
+   一个初始为空的字符串池，它由类 String 私有地维护。 当调用 intern 方法时，如果池已经包含一个等于此 String 对象的字符串（用 equals(Object) 方法确定），则返回池中的字符串。否则，将此 String 对象添加到池中，并返回此 String 对象的引用。特别地，手动入池遵循以下规则：
+
+   对于任意两个字符串 s 和 t ，当且仅当 s.equals(t) 为 true 时，s.intern() == t.intern() 才为 true。
+
+   ```java
+   public class TestString{
+       public static void main(String args[]){
+           String str1 = "abc";
+           String str2 = new String("abc");
+           String str3 = s2.intern();
+   
+           System.out.println( str1 == str2 );   //false
+           System.out.println( str1 == str3 );   //true
+       }
+   }
+   ```
+
+   所以，对于 String str1 = “abc”，str1 引用的是 常量池（方法区） 的对象；而 String str2 = new String(“abc”)，str2引用的是 堆 中的对象，所以内存地址不一样。但是由于内容一样，所以 str1 和 str3 指向同一对象。
+
+3. 实例
+
+   看下面几个场景来深入理解 String。
+
+   1. 情景一：字符串常量池
+
+      Java虚拟机(JVM)中存在着一个字符串常量池，其中保存着很多String对象，并且这些String对象可以被共享使用，因此提高了效率。之所以字符串具有字符串常量池，是因为String对象是不可变的，因此可以被共享。字符串常量池由String类维护，我们可以通过intern()方法使字符串池手动入池。 
+
+      ```java
+          String s1 = "abc";     
+          //↑ 在字符串池创建了一个对象  
+          String s2 = "abc";     
+          //↑ 字符串pool已经存在对象“abc”(共享),所以创建0个对象，累计创建一个对象  
+          System.out.println("s1 == s2 : "+(s1==s2));    
+          //↑ true 指向同一个对象，  
+          System.out.println("s1.equals(s2) : " + (s1.equals(s2)));    
+          //↑ true  值相等  
+      ```
+
+   2. 情景二：关于new String(“…”)
+
+      ```java
+          String s3 = new String("abc");  
+          //↑ 创建了两个对象，一个存放在字符串池中，一个存在与堆区中；  
+          //↑ 还有一个对象引用s3存放在栈中  
+          String s4 = new String("abc");  
+          //↑ 字符串池中已经存在“abc”对象，所以只在堆中创建了一个对象  
+          System.out.println("s3 == s4 : "+(s3==s4));  
+          //↑false   s3和s4栈区的地址不同，指向堆区的不同地址；  
+          System.out.println("s3.equals(s4) : "+(s3.equals(s4)));  
+          //↑true  s3和s4的值相同  
+          System.out.println("s1 == s3 : "+(s1==s3));  
+          //↑false 存放的地区都不同，一个方法区，一个堆区  
+          System.out.println("s1.equals(s3) : "+(s1.equals(s3)));  
+          //↑true  值相同 
+      ```
+
+      通过上一篇博文我们知道，通过 new String(“…”) 来创建字符串时，在该构造函数的参数值为字符串字面值的前提下，若该字面值不在字符串常量池中，那么会创建两个对象：一个在字符串常量池中，一个在堆中；否则，只会在堆中创建一个对象。对于不在同一区域的两个对象，二者的内存地址必定不同。
+
+   3. 情景三：字符串连接符“+”
+
+      ```java
+          String str2 = "ab";  //1个对象  
+          String str3 = "cd";  //1个对象                                         
+          String str4 = str2+str3;                                        
+          String str5 = "abcd";    
+          System.out.println("str4 = str5 : " + (str4==str5)); // false  
+      ```
+
+      我们看这个例子，局部变量 str2，str3 指向字符串常量池中的两个对象。在运行时，第三行代码(str2+str3)实质上会被分解成五个步骤，分别是：
+
+      1. 调用 String 类的静态方法 String.valueOf() 将 str2 转换为字符串表示；
+      2. JVM 在**堆中创建一个 StringBuilder对象**，同时用str2指向转换后的字符串对象进行初始化；　
+      3. 调用StringBuilder对象的append方法完成与str3所指向的字符串对象的合并；
+      4. 调用 StringBuilder 的 toString() 方法在堆中创建一个 String对象；所以这里既有builder对象的abcd，也有普通的abcd。
+      5. 将刚刚生成的String对象的堆地址存赋给局部变量引用str4。
+
+      而引用str5指向的是字符串常量池中字面值”abcd”所对应的字符串对象。由上面的内容我们可以知道，引用str4和str5指向的对象的地址必定不一样。这时，内存中实际上会存在五个字符串对象： 三个在字符串常量池中的String对象、一个在堆中的String对象和一个**在堆中的StringBuilder对象**。 
+
+   4. 情景四：字符串的编译期优化
+
+      ```java
+          String str1 = "ab" + "cd";  //1个对象  
+          String str11 = "abcd";   
+          System.out.println("str1 = str11 : "+ (str1 == str11));   // true
+      
+          final String str8 = "cd";  
+          String str9 = "ab" + str8;  
+          String str89 = "abcd";  
+          System.out.println("str9 = str89 : "+ (str9 == str89));     // true
+          //↑str8为常量变量，编译期会被优化  
+      
+          String str6 = "b";  
+          String str7 = "a" + str6;  
+          String str67 = "ab";  
+          System.out.println("str7 = str67 : "+ (str7 == str67));     // false
+          //↑str6为变量，在运行期才会被解析。
+      ```
+
+      Java 编译器对于类似“**常量+字面值”**的组合，其值在编译的时候就能够被确定了。在这里，str1 和 str9 的值**在编译时就可以被确定**，因此它们分别等价于： String str1 = “abcd”; 和 String str9 = “abcd”;
+
+      Java 编译器对于含有 “String引用”的组合，则在运行期会产生新的对象 (通过调用StringBuilder类的toString()方法)，因此这个对象存储在堆中。
+
+4. 小结
+
+   1. 使用字面值形式创建的字符串与通过 new 创建的字符串一定是不同的，因为二者的存储位置不同：前者在方法区，后者在堆；
+
+   2. 我们在使用诸如String str = “abc”；的格式创建字符串对象时，总是想当然地认为，我们创建了String类的对象str。但是事实上， 对象可能并没有被创建。唯一可以肯定的是，指向 String 对象 的引用被创建了。至于这个引用到底是否指向了一个新的对象，必须根据上下文来考虑；
+
+   3. 字符串常量池的理念是 《享元模式》；
+
+   4. Java 编译器对 “常量+字面值” 的组合 是当成常量表达式直接求值来优化的；对于**含有“String引用”的组合**，其在编译期不能被确定，会在运行期创建新对象。
+
+## 三大字符串类 ： String、StringBuilder 和 StringBuffer
+
+1. String 与 StringBuilder
+
+   简要的说， String 类型 和 StringBuilder 类型的主要性能区别在于 String 是不可变的对象。 事实上，在对 String 类型进行“改变”时，实质上等同于生成了一个新的 String 对象，然后将指针指向新的 String 对象。由于频繁的生成对象会对系统性能产生影响，特别是当内存中没有引用指向的对象多了以后，JVM 的垃圾回收器就会开始工作，继而会影响到程序的执行效率。所以，对于经常改变内容的字符串，最好不要声明为 String 类型。但如果我们使用的是 StringBuilder 类，那么情形就不一样了。因为，我们的每次修改都是针对 StringBuilder 对象本身的，而不会像对String操作那样去生成新的对象并重新给变量引用赋值。所以，在一般情况下，推荐使用 StringBuilder ，特别是字符串对象经常改变的情况下。
+
+   在某些特别情况下，String 对象的字符串拼接可以直接被JVM 在编译期确定下来，这时，StringBuilder 在速度上就不占任何优势了。
+
+   因此，在绝大部分情况下， 在效率方面：StringBuilder > String
+
+2. StringBuffer 与 StringBuilder
+
+   首先需要明确的是，StringBuffer 始于 JDK 1.0，而 StringBuilder 始于 JDK 5.0；此外，从 JDK 1.5 开始，对含有字符串变量 (非字符串字面值) 的连接操作(+)，JVM 内部是采用 StringBuilder 来实现的，而在这之前，这个操作是采用 StringBuffer 实现的。
+
+   JDK的实现中 StringBuffer 与 StringBuilder 都继承自 AbstractStringBuilder。AbstractStringBuilder的实现原理为：AbstractStringBuilder中采用一个 char数组 来保存需要append的字符串，char数组有一个初始大小，当append的字符串长度超过当前char数组容量时，则对char数组进行动态扩展，即重新申请一段更大的内存空间，然后将当前char数组拷贝到新的位置，因为重新分配内存并拷贝的开销比较大，所以每次重新申请内存空间都是采用申请大于当前需要的内存空间的方式，这里是 2 倍。
+
+   StringBuffer 和 StringBuilder 都是可变的字符序列，但是二者最大的一个不同点是：StringBuffer 是线程安全的，而 StringBuilder 则不是。StringBuilder 提供的API与StringBuffer的API是完全兼容的，即，StringBuffer 与 StringBuilder 中的方法和功能完全是等价的，但是后者一般要比前者快。因此，可以这么说，StringBuilder 的提出就是为了在单线程环境下替换 StringBuffer 。
+
+   在单线程环境下，优先使用 StringBuilder。
+
+3. 实例
+
+   1. 编译时优化与字符串连接符的本质
+
+      我们先来看下面这个例子：
+
+   ```java
+   public class Test2 {
+       public static void main(String[] args) {
+           String s = "a" + "b" + "c";
+           String s1 = "a";
+           String s2 = "b";
+           String s3 = "c";
+           String s4 = s1 + s2 + s3;
+   
+           System.out.println(s);
+           System.out.println(s4);
+       }
+   }
+   ```
+
+   由上面的叙述，我们可以知道，变量s的创建等价于 String s = “abc”; 而变量s4的创建相当于：
+
+   ```java
+       StringBuilder temp = new StringBuilder(s1);
+       temp.append(s2).append(s3);
+       String s4 = temp.toString();
+   ```
+
+   但事实上，是不是这样子呢？我们将其反编译一下，来看看Java编译器究竟做了什么：
+
+   ```java
+   //将上述 Test2 的 class 文件反编译
+   public class Test2
+   {
+       public Test2(){}
+       public static void main(String args[])
+       {
+           String s = "abc";            // 编译期优化
+           String s1 = "a";
+           String s2 = "b";
+           String s3 = "c";
+   
+           //底层使用 StringBuilder 进行字符串的拼接
+           String s4 = (new StringBuilder(String.valueOf(s1))).append(s2).append(s3).toString();   
+           System.out.println(s);
+           System.out.println(s4);
+       }
+   }
+   ```
+
+   根据上面的反编译结果，很好的印证了我们在第六节中提出的字符串连接符的本质。
+
+   2. 另一个例子：字符串连接符的本质
+
+      由上面的分析结果，我们不难推断出 String 采用连接运算符（+）效率低下原因分析，形如这样的代码：
+
+      ```java
+      public class Test { 
+          public static void main(String args[]) { 
+              String s = null; 
+                  for(int i = 0; i < 100; i++) { 
+                      s += "a"; 
+                  } 
+          }
+      }
+      ```
+
+      每做一次 字符串连接操作 “+” 就产生一个 StringBuilder 对象，然后 append 后就扔掉。下次循环再到达时，再重新 new 一个 StringBuilder 对象，然后 append 字符串，如此循环直至结束。事实上，如果我们直接采用 StringBuilder 对象进行 append 的话，我们可以节省 N - 1 次创建和销毁对象的时间。所以，对于在循环中要进行字符串连接的应用，一般都是用StringBulider对象来进行append操作。
+
+## String 与 (深)克隆
+
+待补充
+
+
+
+
+
+
+
 # 多线程
 
 
@@ -2747,7 +3271,231 @@ public class ObjectInit extends SuperClass {
 
 
 
+
+
 # 内存结构
+
+## JDK 1.6
+
+我们都知道，Java程序在执行前首先会被编译成字节码文件，然后再由Java虚拟机执行这些字节码文件从而使得Java程序得以执行。事实上，在程序执行过程中，内存的使用和管理一直是值得关注的问题。Java虚拟机在执行Java程序的过程中会把它所管理的内存划分为若干个不同的数据区域，这些数据区域都有各自的用途，以及创建和销毁的时间，并且它们可以分为两种类型：线程共享的方法区和堆，线程私有的虚拟机栈、本地方法栈和程序计数器。在此基础上，我们探讨了在虚拟机中对象的创建和对象的访问定位等问题，并分析了Java虚拟机规范中异常产生的情况。
+
+### 虚拟机内存模型
+
+Java虚拟机在执行Java程序的过程中会把它所管理的内存划分为若干个不同的数据区域，这些数据区域可以分为两个部分：一部分是线程共享的，一部分则是线程私有的。其中，线程共享的数据区包括方法区和堆，线程私有的数据区包括虚拟机栈、本地方法栈和程序计数器。如下图所示：
+
+<img src="D:\学习用\找工作\For_Work\Github面试题\图片\JVM内存模型1.png" alt="JVM内存模型1" style="zoom: 150%;" />
+
+
+
+1. 线程私有的数据区
+
+   线程私有的数据区 包括 程序计数器、 虚拟机栈 和 本地方法栈 三个区域，它们的内涵分别如下：
+
+   1. 程序计数器
+
+      我们知道，线程是CPU调度的基本单位。在多线程情况下，当线程数超过CPU数量或CPU内核数量时，线程之间就要根据 **时间片轮询抢夺CPU时间资源**。也就是说，在任何一个确定的时刻，一个处理器都只会执行一条线程中的指令。因此，**为了线程切换后能够恢复到正确的执行位置，每条线程都需要一个独立的程序计数器去记录其正在执行的字节码指令地址。**
+
+      因此，程序计数器是线程私有的一块较小的内存空间，其可以看做是当前线程所执行的字节码的行号指示器。如果线程正在执行的是一个 Java 方法，计数器记录的是正在执行的字节码**指令的地址**；如果正在执行的是 Native 方法，则计数器的**值为空**。
+
+      程序计数器是唯一一个没有规定任何 OutOfMemoryError 的区域。
+
+   2. 虚拟机栈
+
+      虚拟机栈描述的是Java方法执行的内存模型，是**线程私有的**。每个方法在执行的时候都会创建一个栈帧，用于存储局部变量表、操作数栈、动态链接、方法出口等信息，而且 每个方法从调用直至完成的过程，对应一个栈帧在虚拟机栈中入栈到出栈的过程。其中，**局部变量表主要存放一些基本类型的变量（int, short, long, byte, float, double, boolean, char）和 reference（可能是句柄指针，可能是直接引用），它们可以是方法参数，也可以是方法的局部变量**。
+
+      
+
+      总结：
+
+      栈里面其实就是一个个栈帧，栈帧里面包含：局部变量表、操作数栈、动态链接、方法出口等信息。局部变量表包含可以存基本变量和reference。
+
+      
+
+      虚拟机栈有两种异常情况：StackOverflowError 和 OutOfMemoryError。我们知道，一个线程拥有一个自己的栈，这个栈的大小决定了方法调用的可达深度（递归多少层次，或嵌套调用多少层其他方法，-Xss 参数可以设置虚拟机栈大小），**若线程请求的栈深度大于虚拟机允许的深度，则抛出 StackOverFlowError 异常**。此外，栈的大小可以是固定的，也可以是动态扩展的，若虚拟机栈可以动态扩展（大多数虚拟机都可以），但扩展时无法申请到足够的内存(**比如没有足够的内存为一个新创建的线程分配栈空间时**)，则抛出 OutofMemoryError 异常。下图为栈帧结构图：
+
+      ![栈结构1](D:\学习用\找工作\For_Work\Github面试题\图片\栈结构1.png)
+
+   3. 本地方法栈
+
+      本地方法栈与Java虚拟机栈非常相似，也是线程私有的，区别是虚拟机栈为虚拟机执行 Java 方法服务，而本地方法栈为虚拟机执行 Native 方法服务。与虚拟机栈一样，本地方法栈区域也会抛出 StackOverflowError 和 OutOfMemoryError 异常。
+
+2. 线程共享的数据区
+
+   线程共享的数据区 具体包括 Java堆 和 方法区 两个区域，它们的内涵分别如下：
+
+   1. Java 堆
+
+      **Java 堆的唯一目的就是存放对象实例，几乎所有的对象实例（和数组）都在这里分配内存**。Java堆是线程共享的，类的对象从中分配空间，这些对象通过new、newarray、 anewarray 和 multianewarray 等指令建立，它们不需要程序代码来显式的释放。
+
+      由于Java堆唯一目的就是用来存放对象实例，因此其也是垃圾收集器管理的主要区域，故也称为称为 GC堆。**从内存回收的角度看，由于现在的垃圾收集器基本都采用分代收集算法，所以为了方便垃圾回收Java堆还可以分为 新生代 和 老年代** 。新生代用于存放刚创建的对象以及年轻的对象，如果对象一直没有被回收，生存得足够长，对象就会被移入老年代。新生代又可进一步细分为 eden、survivorSpace0 和 survivorSpace1。刚创建的对象都放入 eden，s0 和 s1 都至少经过一次GC并幸存。如果幸存对象经过一定时间仍存在，则进入老年代。更多关于Java堆和分代收集算法的介绍，请移步我的博文《Java 垃圾回收机制概述》。下图给出了Java堆的结构图：
+
+      ![堆1](D:\学习用\找工作\For_Work\Github面试题\图片\堆1.png)
+
+      注意，**Java堆可以处于物理上不连续的内存空间中，只要逻辑上是连续的即可**。而且，Java堆在实现时，既可以是固定大小的，也可以是可拓展的，并且主流虚拟机都是按可扩展来实现的（通过-Xmx(最大堆容量) 和 -Xms(最小堆容量)控制）。如果在堆中没有内存完成实例分配，并且堆也无法再拓展时，将会抛出 OutOfMemoryError 异常。 
+
+      1. TLAB (Thread Local Allocation Buffer，线程私有分配缓冲区)
+
+         Sun Hotspot JVM 为了提升对象内存分配的效率，对于所创建的线程都会分配一块独立的空间 TLAB，其大小由JVM根据运行的情况计算而得。在TLAB上分配对象时不需要加锁(相对于CAS配上失败重试方式 )，因此JVM在给线程的对象分配内存时会尽量的在TLAB上分配，在这种情况下JVM中分配对象内存的性能和C基本是一样高效的，但如果对象过大的话则仍然是直接使用堆空间分配。
+
+         在下文中我们提到，虚拟机为新生对象分配内存时，需要考虑修改指针 (该指针用于划分内存使用空间和空闲空间) 时的线程安全问题，因为存在可能出现正在给对象A分配内存，指针还未修改，对象B又同时使用原来的指针分配内存的情况。**TLAB 的存在就是为了解决这个问题：每个线程在Java堆中预先分配一小块内存 TLAB，哪个线程需要分配内存就在自己的TLAB上进行分配，若TLAB用完并分配新的TLAB时，再加同步锁定，这样就大大提升了对象内存分配的效率。**
+
+   2. 方法区
+
+      方法区与Java堆一样，也是线程共享的并且不需要连续的内存，其用于存储已被虚拟机加载的 **类信息、常量、静态变量、即时编译器编译后的代码等数据**。方法区通常和永久区(Perm)关联在一起，但永久代与方法区不是一个概念，只是有的虚拟机用永久代来实现方法区，这样就可以用永久代GC来管理方法区，省去专门内存管理的工作。根据Java虚拟机规范的规定，当方法区无法满足内存分配的需求时，将抛出 OutOfMemoryError 异常。
+
+      1. 运行时常量池
+
+         运行时常量池（Runtime Constant Pool）是方法区的一部分，用于存放**编译期生成的各种 字面量 和 符号引用**。其中，字面量比较接近Java语言层次的常量概念，如文本字符串、被声明为final的常量值等；而符号引用则属于编译原理方面的概念，包括以下三类常量：**类和接口的全限定名、字段的名称和描述符 以及 方法的名称和描述符**。因为运行时常量池（Runtime Constant Pool）是方法区的一部分，那么当常量池无法再申请到内存时也会抛出 OutOfMemoryError 异常。
+
+         运行时常量池相对于Class文件常量池的一个重要特征是具备动态性。Java语言并不要求常量一定只有编译期才能产生，运行期间也可能将新的常量放入池中，比如字符串的手动入池方法intern()。
+
+   3. Java堆 与 方法区的区别
+
+      Java堆是 Java代码可及的内存，是留给开发人员使用的；而非堆（Non-Heap）是JVM留给自己用的，所以方法区、JVM内部处理或优化所需的内存 (如JIT编译后的代码缓存)、每个类结构 (如运行时常量池、字段和方法数据)以及方法和构造方法的代码都在非堆内存中。
+
+   4. 方法区的回收
+
+      方法区的内存回收目标主要是针对 **常量池的回收** 和 **对类型的卸载**。回收废弃常量与回收Java堆中的对象非常类似。以常量池中字面量的回收为例，假如一个字符串“abc”已经进入了常量池中，但是当前系统没有任何一个String对象是叫做“abc”的，换句话说是没有任何String对象引用常量池中的“abc”常量，也没有其他地方引用了这个字面量，如果在这时候发生内存回收，而且必要的话，这个“abc”常量就会被系统“请”出常量池。常量池中的其他类（接口）、方法、字段的符号引用也与此类似。
+
+      判定一个常量是否是“废弃常量”比较简单，而要判定一个类是否是“无用的类”的条件则相对苛刻许多。类需要同时满足下面3个条件才能算是“无用的类”：
+
+      1. 该类所有的实例都已经被回收，也就是Java堆中不存在该类的任何实例；
+
+      2. 加载该类的ClassLoader已经被回收；
+
+      3. 该类对应的 java.lang.Class 对象没有在任何地方被引用，无法在任何地方通过反射访问该类的方法。
+
+      虚拟机可以对满足上述3个条件的无用类进行回收(卸载)，这里说的仅仅是“可以”，而不是和对象一样，不使用了就必然会回收。特别地，在大量使用反射、动态代理、CGLib等bytecode框架的场景，以及动态生成JSP和OSGi这类频繁自定义ClassLoader的场景都需要虚拟机具备类卸载的功能，以保证永久代不会溢出。
+
+### JAVA对象在虚拟机中的创建与访问定位
+
+Java是一门面向对象的编程语言，在Java程序运行过程中无时无刻都有对象被创建和使用。在此，我们以最流行的HotSpot虚拟机以及常用的内存区域Java堆为例来探讨在虚拟机中对象的创建和对象的访问等问题。
+
+1. 对象在虚拟机中的创建过程
+
+   1. 检查虚拟机是否加载了所要new的类，若没加载，则首先执行相应的类加载过程。虚拟机遇到new指令时，首先去检查这个指令的参数是否能在常量池中定位到一个类的符号引用，并且检查这个引用代表的类是否已经被加载、解析和初始化过。
+
+   2. 在类加载检查通过后，对象所需内存的大小在类加载完成后便可完全确定，虚拟机就会为新生对象分配内存。一般来说，**根据Java堆中内存是否绝对规整，**内存的分配有两种方式：
+
+      1. 指针碰撞：如果Java堆中内存绝对规整，所有用过的内存放在一边，空闲内存放在另一边，中间一个指针作为分界点的指示器，那分配内存就仅仅是把那个指针向空闲空间那边挪动一段与对象大小相同的距离。
+      2. 空闲列表：如果Java堆中内存并不规整，那么虚拟机就需要维护一个列表，记录哪些内存块是可用的，以便在分配的时候从列表中找到一块足够大的空间划分给对象实例，并更新列表上的记录。
+
+      除了如何划分可用空间之外，还需要考虑修改指针 (该指针用于划分内存使用空间和空闲空间)时的线程安全问题，因为存在可能出现正在给对象A分配内存，指针还未修改，对象B又同时使用原来的指针分配内存的情况。解决这个问题有两种方案：
+
+      1. **对分配内存空间的动作进行同步处理：**采用CAS+失败重试的方式保证更新操作的原子性；
+      2. **把内存分配的动作按照线程划分的不同的空间中：**每个线程在Java堆中预先分配一小块内存，称为本地线程分配缓冲（TLAB），哪个线程要分配内存，就在自己的TLAB上分配，如果TLAB用完并分配新的TLAB时，再加同步锁定。
+
+   3. 内存分配完成后，虚拟机需要将分配到的内存空间都初始化为零值。如果使用TLAB，也可以提前到TLAB分配时进行。这一步操作保证了对象的实例字段在Java代码中可以不赋初值就直接使用，程序能访问到这些字段的数据类型所对应的零值。
+
+   4. 在上面的工作完成之后，从虚拟机的角度来看，一个新的对象已经产生了，但从Java程序的视角来看，对象的创建才刚刚开始，此时会执行<init>方法把对象按照程序员的意愿进行初始化，从而产生一个真正可用的对象。
+
+2. 对象在虚拟机中的访问定位
+
+   创建对象是为了使用对象，我们的Java程序通过栈上的reference数据来操作堆上的具体对象。在虚拟机规范中，reference类型中只规定了一个指向对象的引用，并没有定义这个引用使用什么方式去定位、访问堆中的对象的具体位置。目前的主流的访问方式有使用句柄访问和直接指针访问两种。
+
+   1. **句柄访问**：Java堆中会划分出一块内存作为句柄池，栈中的reference指向对象的句柄地址，句柄中包含了对象实例数据和类型数据各自的具体地址信息，如下图所示。
+
+      ![句柄1](D:\学习用\找工作\For_Work\Github面试题\图片\句柄1.png)
+
+   2. **直接指针访问**：reference中存储的就是对象地址。
+
+      ![直接指针访问1](D:\学习用\找工作\For_Work\Github面试题\图片\直接指针访问1.png)
+
+      总的来说，这两种对象访问定位方式各有千秋。使用句柄访问的最大好处就是reference中存储的是稳定的句柄地址，对象被移动（垃圾收集时移动对象是非常普遍的行为）时只会改变句柄中的实例数据指针，reference本身不需要修改；而使用直接指针访问的最大好处就是速度快，节省了一次指针定位的时间开销。 
+
+### 内存异常产生情况分析
+
+1. Java堆溢出（OOM）
+
+   Java堆用于存储对象的实例，只要不断地创建对象，并且保证GC roots到对象之间有可达路径来避免垃圾回收机制清除这些对象，那么在对象数量到达最大堆的容量限制后就会产生内存溢出异常。如下所示，
+
+   ```java
+   public class Test {
+   
+   public static void main(String[] args){
+           List list=new ArrayList();   // 持有“大对象”的引用，防止垃圾回收
+           while(true){
+               int[] tmp = new int[10000000];  // 不断创建“大对象”
+               list.add(tmp);
+           }
+       }
+   }
+   ```
+
+   要解决这个异常，一般先通过内存映像分析工具对堆转储快照分析，确定内存的对象是否是必要的，即判断是 内存泄露 还是 内存溢出。如果是内存泄露，可以进一步通过工具查看泄露对象到GC Roots的引用链，比较准确地定位出泄露代码的位置。如果是内存溢出，可以调大虚拟机堆参数，或者从代码上检查是否存在某些对象生命周期过长的情况。
+
+   
+
+2. 虚拟机栈和本地方法栈溢出 (SOF/OOM)
+
+   1. SOF
+
+      如果线程请求的栈深度大于虚拟机栈允许的最大深度，将抛出StackOverflowError异常。我们知道，每当Java程序启动一个新的线程时，Java虚拟机会为它分配一个栈，并且Java虚拟机栈以栈帧为单位保持线程运行状态。每当线程调用一个方法时，JVM就压入一个新的栈帧到这个线程的栈中，只要这个方法还没返回，这个栈帧就存在。 那么可以想象，如果方法的嵌套调用层次太多，比如递归调用，随着Java虚拟机栈中的栈帧的不断增多，最终很可能会导致这个线程的栈中的所有栈帧的大小的总和大于-Xss设置的值，从而产生StackOverflowError溢出异常。看下面的栗子：
+
+      ```java
+      public class Test {
+      
+          public static void main(String[] args) {
+                method();
+          }
+      
+          // 递归调用导致 StackOverflowError
+          public static void method(){
+              method();
+          }
+      }
+      ```
+
+   2. OOM
+
+      如果虚拟机在拓展栈时无法申请到足够的内存空间，则抛出OutOfMemoryError异常。在虚拟机栈和本地方法栈发生OOM异常场景如下：当Java 程序启动一个新线程时，若没有足够的空间为该线程分配Java栈(一个线程Java栈的大小由-Xss设置决定)，JVM将抛出OutOfMemoryError异常。
+
+3. 方法区和运行时常量池溢出 (OOM)
+
+   运行时常量池溢出的情况： String.intern()是一个native方法，在JDK1.6及之前的版本中，它的作用是：如果字符串常量池中已经包含一个等于此String对象的字符串，则返回代表池中这个字符串的String对象，否则将此String对象包含的字符串添加到常量池中，并且返回此String对象的引用。由于常量池分配在永久代中，如果不断地使用intern方法手动入池字符串，则会抛出OutOfMemoryError异常。但在JDK1.7及其以后的版本中，对intern（）方法的实现作了进一步改进，其不会再复制实例到常量池中，而仅仅是在常量池中记录首次出现的实例的引用。看下面的例子（在JDK1.7中运行），
+
+   ```java
+   public class Test {  
+       public static void main(String[] args) {  
+   
+           String str1 = new StringBuilder("aa").append("c").toString();
+           System.out.println(str1.intern() == str1);
+   
+           String str2 = new StringBuilder("java").toString();
+           System.out.println(str2.intern() == str2);
+       }/* Output: 
+           true
+           false
+        *///:~  
+   ```
+
+   为什么第一个返回true，而第二个返回false呢？因为在JDK1.7中，intern（）方法的实现不会再复制实例，只是在常量池中记录 首次 出现的实例的引用，因此str1.intern()和str1指向的是同一个字符串，所以返回true。同一个引用。对于“java”这个字符串，由于在执行StringBuilder.toString() 之前已经出现过，所以字符串常量池中在new StringBuilder(“java”).toString()之前已经有它的引用了，不符合首次出现的原则，因此返回fasle。有人可能心里可能就要嘀咕了，为啥第二个不符合首次出现的原则，而第一个就符合首次出现的原则呢？ 实际上，
+
+   ```java
+   String str2 = new StringBuilder("java").toString();
+   ```
+
+   等价于：
+
+   ```java
+   String s1 = "java";
+   StringBuilder sb = new StringBuilder(s1);
+   String str2 = sb.toString();
+   
+   // StringBuilder 的 toString()方法
+   public String toString() {
+           // Create a copy, don't share the array
+           return new String(value, 0, count);
+   }
+   ```
+
+   由上面代码可知，字符串”java”早就出现了，因此不符合首次出现的原则，返回false。同理，“计算机软件”这个字符串在new  StringBuilder(“aa”).append(“c”).toString()之前从未出现过，因此符合首次出现的原则，返回true。这里append只改变堆，常量池会出现aa和c，没有aac，堆有。
+
+   要想更彻底地了解本实例，建议移步我的博文 [《Java String 综述(上篇)》](http://blog.csdn.net/justloveyou_/article/details/52556427) 和 [《Java String 综述(下篇)》](http://blog.csdn.net/justloveyou_/article/details/60983034)进行进一步了解。
+
+   （**去看看**）
+
+   方法区溢出的情况：一个类要被垃圾回收器回收掉，判断条件是比较苛刻的。 在经常动态产生大量Class的应用中，需要特别注意类的回收状况，比如动态语言、大量JSP或者动态产生JSP文件的应用（JSP第一次运行时需要编译为Java类）、基于OSGi的应用（即使是同一个类文件，被不同的加载器加载也会视为不同的类）等
 
 # 1.10 内部类
 - 在另一个类的里面定义的类就是内部类
