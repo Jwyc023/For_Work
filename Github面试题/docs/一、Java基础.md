@@ -3359,7 +3359,7 @@ Thread 类实现了 Runnable 接口，在 Thread 类中，有一些比较关键�
       一般来说，有两种方式可以达到重写run()方法的效果：
 
       - **直接重写：**直接继承Thread类并重写run()方法；
-      - **间接重写：**通过Thread构造函数传入Runnable对象 (注意，实际上重写的是 Runnable对象 的run() 方法)。？？？
+      - **间接重写：**通过Thread构造函数传入Runnable对象 (注意，实际上重写的是 Runnable对象 的run() 方法)。
 
    3. sleep 方法
 
@@ -3427,17 +3427,293 @@ Thread 类实现了 Runnable 接口，在 Thread 类中，有一些比较关键�
 
       interrupt，顾名思义，即中断的意思。单独调用interrupt方法可以使得 **处于阻塞状态的线程 抛出一个异常，也就是说，它可以用来中断一个正处于阻塞状态的线程**；另外，通过 interrupted()方法 和 isInterrupted()方法 可以停止正在运行的线程。
 
-      直接调用interrupt() 方法不能中断正在运行中的线程。但是，如果配合 isInterrupted()或者interrupted() 能够中断正在运行的线程，因为调用interrupt()方法相当于将中断标志位置为true，那么可以通过调用isInterrupted()/interrupted()判断中断标志是否被置位来中断线程的执行。
+      ```java
+      public class Test {
+      
+          public static void main(String[] args) throws IOException  {
+              Test test = new Test();
+              MyThread thread = test.new MyThread();
+              thread.start();
+              try {
+                  Thread.currentThread().sleep(2000);
+              } catch (InterruptedException e) {
+      
+              }
+              thread.interrupt();
+          } 
+      
+          class MyThread extends Thread{
+              @Override
+              public void run() {
+                  try {
+                      System.out.println("进入睡眠状态");
+                      Thread.currentThread().sleep(10000);
+                      System.out.println("睡眠完毕");
+                  } catch (InterruptedException e) {
+                      System.out.println("得到中断异常");
+                  }
+                  System.out.println("run方法执行完毕");
+              }
+          }
+      }/* Output:
+              进入睡眠状态
+              得到中断异常
+              run方法执行完毕
+       *///~
+      ```
+
+      从这里可以看出，**通过interrupt方法可以中断处于阻塞状态的线程**。那么能不能中断处于非阻塞状态的线程呢？看下面这个例子：
+
+      ```java
+      public class Test {
+      
+          public static void main(String[] args) throws IOException  {
+              Test test = new Test();
+              MyThread thread = test.new MyThread();
+              thread.start();
+              try {
+                  Thread.currentThread().sleep(2000);
+              } catch (InterruptedException e) {}
+              thread.interrupt();
+          } 
+      
+          class MyThread extends Thread{
+              @Override
+              public void run() {
+                  int i = 0;
+                  while(i<Integer.MAX_VALUE){
+                      System.out.println(i+" while循环");
+                      i++;
+                  }
+              }
+          }
+      }
+      ```
+
+      运行该程序会发现，while循环会一直运行直到变量i的值超出Integer.MAX_VALUE。所以说，直接调用interrupt() 方法不能中断正在运行中的线程。但是，如果配合 isInterrupted()/interrupted() 能够中断正在运行的线程，因为调用interrupt()方法相当于将中断标志位置为true，那么可以通过调用isInterrupted()/interrupted()判断中断标志是否被置位来中断线程的执行。比如下面这段代码：
+
+      ```java
+      public class Test {
+          public static void main(String[] args) throws IOException  {
+              Test test = new Test();
+              MyThread thread = test.new MyThread();
+              thread.start();
+              try {
+                  Thread.currentThread().sleep(2000);
+              } catch (InterruptedException e) {
+      
+              }
+              thread.interrupt();
+          } 
+      
+          class MyThread extends Thread{
+              @Override
+              public void run() {
+                  int i = 0;
+                  while(!isInterrupted() && i<Integer.MAX_VALUE){
+                      System.out.println(i+" while循环");
+                      i++;
+                  }
+              }
+          }
+      }
+      ```
 
       一般情况下，不建议通过这种方式来中断线程，一般会在MyThread类中增加一个 \**volatile 属性\** isStop 来标志是否结束 while 循环，然后再在 while 循环中判断 isStop 的值。
+
+      ```java
+      class MyThread extends Thread{
+              private volatile boolean isStop = false;
+              @Override
+              public void run() {
+                  int i = 0;
+                  while(!isStop){
+                      i++;
+                  }
+              }
+      
+              public void setStop(boolean stop){
+                  this.isStop = stop;
+              }
+          }
+      ```
 
    7. stop方法
 
       stop() 方法已经是一个 **废弃的** 方法，它是一个 **不安全的** 方法。因为调用 stop() 方法会直接终止run方法的调用，并且会抛出一个ThreadDeath错误，如果线程持有某个对象锁的话，会完全释放锁，导致对象状态不一致。所以， stop() 方法基本是不会被用到的。
+      
+      
 
-   
+2. 线程的暂停与恢复
 
-2. 线程的各项基本操作
+   1. 线程的暂停、恢复方法在 JDK 中的定义
+
+      暂停线程意味着此线程还可以恢复运行。在 Java 中，我可以使用 suspend() 方法暂停线程，使用 resume() 方法恢复线程的执行，但是这两个方法已被废弃，因为它们具有固有的死锁倾向。如果目标线程挂起时在保护关键系统资源的监视器上保持有锁，则在目标线程重新开始以前，任何线程都不能访问该资源。如果重新开始目标线程的线程想在调用 resume 之前锁定该监视器，则会发生死锁。
+
+   2. 死锁
+
+      **具体地，在使用 suspend 和 resume 方法时，如果使用不当，极易造成公共的同步对象的独占，使得其他线程无法得到公共同步对象锁，从而造成死锁。**下面举两个示例：
+
+      ```java
+      // 示例 1
+      public class SynchronizedObject {
+      
+          public synchronized void printString() {        // 同步方法
+              System.out.println("Thread-" + Thread.currentThread().getName() + " begins.");
+              if (Thread.currentThread().getName().equals("a")) {
+                  System.out.println("线程a suspend 了...");
+                  Thread.currentThread().suspend();
+              }
+              System.out.println("Thread-" + Thread.currentThread().getName() + " is end.");
+          }
+      
+          public static void main(String[] args) throws InterruptedException {
+      
+              final SynchronizedObject object = new SynchronizedObject();     // 两个线程使用共享同一个对象
+      
+              Thread a = new Thread("a") {
+                  @Override
+                  public void run() {
+                      object.printString();
+                  }
+              };
+              a.start();
+      
+              new Thread("b") {
+                  @Override
+                  public void run() {
+                      System.out.println("thread2 启动了，在等待中(发生“死锁”)...");
+                      object.printString();
+                  }
+              }.start();
+      
+              System.out.println("main 线程睡眠 " + 5 +" 秒...");
+              Thread.sleep(5000);
+              System.out.println("main 线程睡醒了...");
+      
+              a.resume();
+              System.out.println("线程 a resume 了...");
+          }
+      }/* Output:
+              Thread-a begins.
+              线程a suspend 了...
+              thread2 启动了，在等待中(发生死锁)...
+              main 线程睡眠 5 秒...
+              main 线程睡醒了...
+              线程 a resume 了...
+              Thread-a is end.
+              Thread-b begins.
+              Thread-b is end.
+       *///:~
+      ```
+
+      在示例 2 中，特别要注意的是，**println() 方法实质上是一个同步方法。**如果 thread 线程刚好在执行打印语句时被挂起，那么将会导致 main线程中的字符串 “main end!” 迟迟不能打印。
+
+      ```java
+      // 示例 2
+      public class MyThread extends Thread {
+      
+          private long i = 0;
+      
+          @Override
+          public void run() {
+              while (true) {
+                  i++;
+                  System.out.println(i);
+              }
+          }
+      
+          public static void main(String[] args) {
+              try {
+                  MyThread thread = new MyThread();
+                  thread.start();
+                  Thread.sleep(1);
+                  thread.suspend();
+                  System.out.println("main end!");
+              } catch (InterruptedException e) {
+                  e.printStackTrace();
+              }
+          }
+      }
+      ```
+
+3. 线程常用操作
+
+   1. 获得代码调用者信息
+
+      currentThread() 方法返回代码段正在被哪个线程调用的信息。
+
+      ```java
+      public class CountOperate extends Thread {
+      
+          public CountOperate() {
+              super("Thread-CO");     // 线程 CountOperate 的名字
+              System.out.println("CountOperate---begin");
+              System.out.println("Thread.currentThread().getName()="
+                      + Thread.currentThread().getName());        
+              System.out.println("this.getName()=" + this.getName());       
+              System.out.println("CountOperate---end");
+          }
+      
+          @Override
+          public void run() {
+              System.out.println("run---begin");
+              System.out.println("Thread.currentThread().getName()="
+                      + Thread.currentThread().getName());    
+              System.out.println("this.getName()=" + this.getName());    
+              System.out.println("run---end");
+          }
+      
+          public static void main(String[] args) {
+              CountOperate c = new CountOperate();
+              Thread t1 = new Thread(c);
+              t1.setName("A");
+              t1.start();         
+              c.start();         
+          }
+      }/* Output:(输出结果不唯一)
+              CountOperate---begin                             ....... 行 1
+              Thread.currentThread().getName()=main            ....... 行 2
+              this.getName()=Thread-CO                         ....... 行 3
+              CountOperate---end                               ....... 行 4
+              run---begin                                      ....... 行 5
+              Thread.currentThread().getName()=A               ....... 行 6
+              run---begin                                      ........行 7
+              Thread.currentThread().getName()=Thread-CO       ....... 行 8
+              this.getName()=Thread-CO                         ....... 行 9
+              run---end                                        ....... 行 10
+              this.getName()=Thread-CO                         ....... 行 11
+              run---end                                        ....... 行 12
+       *///:~
+      ```
+
+      首先来看前四行的输出。我们知道 CountOperate 继承了 Thread 类，那么 CountOperate 就得到了 Thread类的所有非私有属性和方法。CountOperate 构造方法中的 super(“Thread-CO”);意味着调用了父类Thread的构造器Thread(String name)，也就是为 CountOperate线程 赋了标识名。由于该构造方法是由main()方法调用的，因此此时 Thread.currentThread() 返回的是main线程；而 this.getName() 返回的是CountOperate线程的标识名。
+
+      其次，在main线程启动了t1线程之后，CPU会在某个时机执行类CountOperate的run()方法。此时，Thread.currentThread() 返回的是t1线程，因为是t1线程的启动使run()方法得到了执行；而 this.getName() 返回的仍是CountOperate线程的标识名，因为此时this指的是传进来的CountOperate对象(run执行的是target.run()，target是Runnable类型的成员对象，通过Thread构造函数赋值、实例化)，由于它本身也是一个线程对象，所以可以调用getName()得到相应的标识名。
+
+      在main线程启动了CountOperate线程之后，CPU也会在某个时机执行类该线程的run()方法。此时，Thread.currentThread() 返回的是CountOperate线程，因为是CountOperate线程的启动使run()方法得到了执行；而 this.getName() 返回的仍是CountOperate线程的标识名，因为此时this指的就是刚刚创建的CountOperate对象本身，所以得到的仍是 “Thread-CO ”。
+
+4. 判断线程是否处于活动状态
+
+   **方法 isAlive() 的功能是判断调用该方法的线程是否处于活动状态。**其中，活动状态指的是线程已经 start (无论是否获得CPU资源并运行) 且尚未结束。
+
+5. 获取线程唯一标识
+
+   方法 getId() 的作用是取得线程唯一标识，由JVM自动给出。
+
+6. 线程优先级的继承性
+
+   在 Java 中，线程的优先级具有继承性，比如 A 线程启动 B 线程， 那么 B 线程的优先级与 A 是一样的。
+
+7. 线程优先级的规则性和随机性
+
+   **线程的优先级具有一定的规则性，也就是CPU尽量将执行资源让给优先级比较高的线程。**特别地，高优先级的线程总是大部分先执行完，但并不一定所有的高优先级线程都能先执行完。
+
+8. 守护线程 (Daemon)
+
+   在 Java 中，线程可以分为两种类型，即用户线程和守护线程。守护线程是一种特殊的线程，具有“陪伴”的含义：当进程中不存在非守护线程时，则守护线程自动销毁，典型的守护线程就是垃圾回收线程。任何一个守护线程都是整个JVM中所有非守护线程的保姆，只要当前JVM实例中存在任何一个非守护线程没有结束，守护线程就在工作；只有当最后一个非守护线程结束时，守护线程才随着JVM一同结束工作。 
+
+9. 线程的各项基本操作
 
    对于上述线程的各项基本操作，其 **所操作的对象** 满足：
 
@@ -3452,6 +3728,683 @@ Thread 类实现了 Runnable 接口，在 Thread 类中，有一些比较关键�
    - 线程一旦被阻塞，就会释放 CPU；
    - 当线程出现异常且没有捕获处理时，JVM会自动释放当前线程占用的锁，因此不会由于异常导致出现死锁现象。
    - 对于一个线程，CPU 的释放 与 锁的释放没有必然联系。
+
+## 线程间通信和协作
+
+线程与线程之间不是相互独立的个体，它们彼此之间需要相互通信和协作，最典型的例子就是生产者-消费者问题。本文首先介绍 wait/notify 机制，并对实现该机制的两种方式——synchronized+wait-notify模式和Lock+Condition模式进行详细剖析，以作为线程间通信与协作的基础。进一步地，以经典的生产者-消费者问题为背景，熟练对 wait/notify 机制的使用。最后，对 Thread 类中的 join() 方法进行源码分析，并以宿主线程与寄生线程的协作为例进行说明。
+
+线程与线程之间不是相互独立的个体，它们彼此之间需要相互通信和协作。比如说最经典的 生产者-消费者模型：当队列满时，生产者需要等待队列有空间才能继续往里面放入商品，而在等待的期间内，生产者必须释放对临界资源（即队列）的占用权。因为生产者如果不释放对临界资源的占用权，那么消费者就无法消费队列中的商品，就不会让队列有空间，那么生产者就会一直无限等待下去。因此，一般情况下，当队列满时，会让生产者交出对临界资源的占用权，并进入挂起状态。然后等待消费者消费了商品，然后消费者通知生产者队列有空间了。同样地，当队列空时，消费者也必须等待，等待生产者通知它队列中有商品了。这种互相通信的过程就是线程间的协作，也是本文要探讨的问题。
+
+在下面的例子中，虽然两个线程实现了通信，但是凭借 线程B 不断地通过 while语句轮询 来检测某一个条件，这样会导致CPU的浪费。因此，需要一种机制来减少 CPU资源 的浪费，而且还能实现多个线程之间的通信，即 wait/notify 机制 。
+
+```java
+//资源类
+class MyList {
+
+	//临界资源
+	private volatile List<String> list = new ArrayList<String>();
+
+	public void add() {
+		list.add("abc");
+	}
+
+	public int size() {
+		return list.size();
+	}
+}
+
+// 线程A
+class ThreadA extends Thread {
+
+	private MyList list;
+
+	public ThreadA(MyList list,String name) {
+		super(name);
+		this.list = list;
+	}
+
+	@Override
+	public void run() {
+		try {
+			for (int i = 0; i < 3; i++) {
+				list.add();
+				System.out.println("添加了" + (i + 1) + "个元素");
+				Thread.sleep(1000);
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+//线程B
+class ThreadB extends Thread {
+
+	private MyList list;
+
+	public ThreadB(MyList list,String name) {
+		super(name);
+		this.list = list;
+	}
+
+	@Override
+	public void run() {
+		try {
+			while (true) {          // while 语句轮询
+				if (list.size() == 2) {
+					System.out.println("==2了，线程b要退出了！");
+					throw new InterruptedException();
+				}
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+//测试
+public class Test {
+	public static void main(String[] args) {
+		
+		MyList service = new MyList();
+
+		ThreadA a = new ThreadA(service,"A");
+		ThreadB b = new ThreadB(service,"B");
+		
+		a.start();
+		b.start();
+	}
+}/* Output(输出结果不唯一): 
+        添加了1个元素
+        添加了2个元素
+        ==2了，线程b要退出了！
+        java.lang.InterruptedException
+	        at test.ThreadB.run(Test.java:57)
+        添加了3个元素
+ *///:~
+
+```
+
+### wait/notify 机制
+
+在这之前，线程间通过共享数据来实现通信，即多个线程主动地读取一个共享数据，通过 **同步互斥访问机制** 保证线程的安全性。**等待/通知机制** 主要由 Object类 中的以下三个方法保证：
+
+wait()、notify() 和 notifyAll()
+
+上述三个方法均非Thread类中所声明的方法，而是Object类中声明的方法。原因是**每个对象都拥有monitor（锁）**，所以让当前线程等待某个对象的锁，当然应该通过这个对象来操作，而不是用当前线程来操作，因为当前线程可能会等待多个线程的锁，如果通过线程来操作，就非常复杂了。
+
+1. wait
+
+   让 \**当前线程\** \**(Thread.concurrentThread() 方法所返回的线程)\** 释放对象锁并进入等待（阻塞）状态。
+
+   该方法用来将当前线程置入休眠状态，直到接到通知或被中断为止。在调用  wait()之前，线程必须要获得该对象的对象级别锁，即只能在同步方法或同步块中调用 wait()方法。进入  wait()方法后，当前线程释放锁。在从 wait()返回前，线程与其他线程竞争重新获得锁。如果调用 wait()时，没有持有适当的锁，则抛出  IllegalMonitorStateException，它是 RuntimeException 的一个子类，因此，不需要 try-catch  结构。
+
+   1. 方法作用
+
+      Causes the current thread to wait until either another thread invokes the notify() method or the notifyAll() method for this object, or a specified amount of time has elapsed. If any threads are waiting on this object, one of them is chosen to be awakened. The choice is arbitrary and occurs at the discretion of the implementation. A thread waits on this object’s monitor by calling one of the wait() methods.
+
+      This method causes the current thread (call it T)：
+
+      ① to place itself in the wait set for this object；
+
+      ② to relinquish (放弃) any and all synchronization claims on this object；
+
+      ③ Thread T becomes disabled for thread scheduling purposes and lies dormant (休眠) until one of four things happens:
+
+          Some other thread invokes the notify method for this object and thread T happens to be arbitrarily chosen as the thread to be awakened；
+          
+          Some other thread invokes the notifyAll method for this object；
+          
+          Some other thread interrupts thread T；
+          
+          The specified amount of real time has elapsed, more or less. If timeout is zero, however, then real time is not taken into consideration and the thread simply waits until notified (等待时间为 0 意味着永远等待，直至线程被唤醒) .
+
+      The thread T is then removed from the wait set for this object and re-enabled for thread scheduling. It then competes in the usual manner with other threads for the right to synchronize on the object; once it has gained control of the object, all its synchronization claims on the object are restored to the status quo ante - that is, to the situation as of the time that the wait method was invoked. Thread T then returns from the invocation of the wait method. Thus, on return from the wait method, the synchronization state of the object and of thread T is exactly as it was when the wait method was invoked.
+      
+
+   2. 方法使用条件
+
+      This method should only be called by a thread that is the owner of this object’s monitor.
+
+   3. 异常
+
+      - 运行时（不受检查）异常
+        IllegalMonitorStateException： if the current thread is not the owner of this object’s monitor；
+        IllegalArgumentException： if the value of timeout is negative；
+
+      - 受检查异常 (中断阻塞线程，抛 InterruptedException并终止线程，释放锁，释放CPU)
+        InterruptedException： if any thread interrupted the current thread before or while the current thread was waiting for a notification. The interrupted status of the current thread is cleared when this exception is thrown.
+
+2. notify
+
+   唤醒一个正在等待相应对象锁的线程，使其进入就绪队列，以便在当前线程释放锁后竞争锁，进而得到CPU的执行。
+
+   该方法也要在同步方法或同步块中调用，即在调用前，线程也必须要获得该对象的对象级别锁，的如果调用 notify()时没有持有适当的锁，也会抛出 IllegalMonitorStateException。
+
+   该方法用来通知那些可能等待该对象的对象锁的其他线程。如果有多个线程等待，则线程规划器任意挑选出其中一个  wait()状态的线程来发出通知，并使它等待获取该对象的对象锁（notify 后，当前线程不会马上释放该对象锁，wait  所在的线程并不能马上获取该对象锁，要等到程序退出 synchronized  代码块后，当前线程才会释放锁，wait所在的线程也才可以获取该对象锁），但不惊动其他同样在等待被该对象notify的线程们。当第一个获得了该对象锁的 wait 线程运行完毕以后，它会释放掉该对象锁，此时如果该对象没有再次使用 notify 语句，则即便该对象已经空闲，其他 wait  状态等待的线程由于没有得到该对象的通知，会继续阻塞在 wait 状态，直到这个对象发出一个 notify 或  notifyAll。这里需要注意：它们等待的是被 notify 或 notifyAll，而不是锁。这与下面的  notifyAll()方法执行后的情况不同。 
+
+   1. 方法作用
+
+      Wakes up a single thread that is waiting on this object’s monitor. If any threads are waiting on this object, one of them is chosen to be awakened. The choice is arbitrary and occurs at the discretion of the implementation.
+
+      The awakened thread will not be able to proceed until the current thread relinquishes (放弃) the lock on this object.（在执行 notify() 方法后，当前线程不会马上释放该锁对象，呈 wait 状态的线程也并不能马上获取该对象锁。只有等到执行notify()方法的线程退出synchronized代码块/方法后，当前线程才会释放锁，而相应的呈wait状态的线程才可以去争取该对象锁。） The awakened thread will compete in the usual manner with any other threads that might be actively competing to (竞争) synchronize on this object; the awakened thread enjoys no reliable privilege or disadvantage in being the next thread to lock this object.
+
+   2. 方法使用条件
+
+      This method should only be called by a thread that is the owner of this object’s monitor. A thread becomes the owner of the object’s monitor in one of three ways:
+
+          By executing a synchronized instance method of that object；
+          
+          By executing the body of a synchronized statement that synchronizes on the object；
+          
+          For objects of type Class, by executing a synchronized static method of that class.
+
+      Only one thread at a time can own an object’s monitor(互斥锁).
+
+   3. 异常
+
+      运行时（不受检查）异常
+       IllegalMonitorStateException： if the current thread is not the owner of this object’s monitor.
+
+3. notifyAll
+
+   唤醒所有正在等待相应对象锁的线程，使它们进入就绪队列，以便在当前线程释放锁后竞争锁，进而得到CPU的执行。
+
+   该方法与 notify ()方法的工作方式相同，重要的一点差异是：
+
+   notifyAll 使所有原来在该对象上 wait 的线程统统退出 wait 的状态（即全部被唤醒，不再等待 notify 或  notifyAll，但由于此时还没有获取到该对象锁，因此还不能继续往下执行），变成等待获取该对象上的锁，一旦该对象锁被释放（notifyAll  线程退出调用了 notifyAll 的 synchronized  代码块的时候），他们就会去竞争。如果其中一个线程获得了该对象锁，它就会继续往下执行，在它退出 synchronized  代码块，释放锁后，其他的已经被唤醒的线程将会继续竞争获取该锁，一直进行下去，直到所有被唤醒的线程都执行完毕。
+
+   1. 方法作用
+
+      Wakes up all threads that are waiting on this object’s monitor. A thread waits on an object’s monitor by calling one of the wait methods.
+
+      The awakened threads will not be able to proceed until the current thread relinquishes (放弃) the lock on this object. The awakened threads will compete in the usual manner with any other threads that might be actively competing to (竞争) synchronize on this object; the awakened threads enjoy no reliable privilege or disadvantage in being the next thread to lock this object.
+
+   2. 方法使用条件
+
+      This method should only be called by a thread that is the owner of this object’s monitor.
+
+   3. 异常
+
+      - 运行时（不受检查）异常
+         IllegalMonitorStateException： if the current thread is not the owner of this object’s monitor.
+
+   
+
+4. 小结：
+
+   如果线程调用了对象的 wait()方法，那么线程便会处于该对象的**等待池**中，等待池中的线程不会去竞争该对象的锁。
+
+   当有线程调用了对象的 notifyAll()方法（唤醒所有 wait 线程）或 notify()方法（只随机唤醒一个 wait 线程），被唤醒的的线程便会进入该对象的**锁池**中，锁池中的线程会去竞争该对象锁。
+
+   优先级高的线程竞争到对象锁的概率大，假若某线程没有竞争到该对象锁，它还会留在锁池中，唯有线程再次调用  wait()方法，它才会重新回到等待池中。而竞争到对象锁的线程则继续往下执行，直到执行完了 synchronized  代码块，它会释放掉该对象锁，这时锁池中的线程会继续竞争该对象锁。
+
+- wait()、notify() 和 notifyAll()方法是 本地方法，并且为 final 方法，无法被重写；
+
+- 调用某个对象的 wait() 方法能让 当前线程阻塞，并且当前线程必须拥有此对象的monitor（即锁）；
+
+- 调用某个对象的 notify() 方法能够唤醒 一个正在等待这个对象的monitor的线程，如果有多个线程都在等待这个对象的monitor，则只能唤醒其中一个线程；
+
+- 调用notifyAll()方法能够唤醒所有正在等待这个对象的monitor的线程。
+
+  综上，所谓唤醒线程，另一种解释可以说是将线程由等待池移动到锁池，notifyAll调用后，会将全部线程由等待池移到锁池，然后参与锁的竞争，竞争成功则继续执行，如果不成功则留在锁池等待锁被释放后再次参与竞争。而notify只会唤醒一个线程。
+
+### 方法调用与线程状态关系
+
+**每个锁对象都有两个队列，一个是就绪队列，一个是阻塞队列。**就绪队列存储了已就绪（将要竞争锁）的线程，阻塞队列存储了被阻塞的线程。当一个阻塞线程被唤醒后，才会进入就绪队列，进而等待CPU的调度；反之，当一个线程被wait后，就会进入阻塞队列，等待被唤醒。
+
+```java
+public class Test {
+	public static Object object = new Object();
+
+	public static void main(String[] args) throws InterruptedException {
+		Thread1 thread1 = new Thread1();
+		Thread2 thread2 = new Thread2();
+
+		thread1.start();
+
+		Thread.sleep(2000);
+
+		thread2.start();
+	}
+
+	static class Thread1 extends Thread {
+		@Override
+		public void run() {
+			synchronized (object) {
+				System.out.println("线程" + Thread.currentThread().getName()
+						+ "获取到了锁...");
+				try {
+					System.out.println("线程" + Thread.currentThread().getName()
+							+ "阻塞并释放锁...");
+					object.wait();
+				} catch (InterruptedException e) {
+				}
+				System.out.println("线程" + Thread.currentThread().getName()
+						+ "执行完成...");
+			}
+		}
+	}
+
+	static class Thread2 extends Thread {
+		@Override
+		public void run() {
+			synchronized (object) {
+				System.out.println("线程" + Thread.currentThread().getName()
+						+ "获取到了锁...");
+				object.notify();
+				System.out.println("线程" + Thread.currentThread().getName()
+						+ "唤醒了正在wait的线程...");
+			}
+			System.out
+					.println("线程" + Thread.currentThread().getName() + "执行完成...");
+		}
+	}
+}/* Output: 
+        线程Thread-0获取到了锁...
+        线程Thread-0阻塞并释放锁...
+        线程Thread-1获取到了锁...
+        线程Thread-1唤醒了正在wait的线程...
+        线程Thread-1执行完成...
+        线程Thread-0执行完成...
+ *///:~
+
+```
+
+多个同类型线程的场景（wait 的条件发生变化）
+
+```java
+//资源类
+class ValueObject {
+	public static List<String> list = new ArrayList<String>();
+}
+
+//元素添加线程
+class ThreadAdd extends Thread {
+
+	private String lock;
+
+	public ThreadAdd(String lock,String name) {
+		super(name);
+		this.lock = lock;
+	}
+
+	@Override
+	public void run() {
+		synchronized (lock) {
+			ValueObject.list.add("anyString");
+			lock.notifyAll();               // 唤醒所有 wait 线程
+		}
+	}
+}
+
+//元素删除线程
+class ThreadSubtract extends Thread {
+
+	private String lock;
+
+	public ThreadSubtract(String lock,String name) {
+		super(name);
+		this.lock = lock;
+	}
+
+	@Override
+	public void run() {
+		try {
+			synchronized (lock) {
+				if (ValueObject.list.size() == 0) {
+					System.out.println("wait begin ThreadName=" + Thread.currentThread().getName());
+					lock.wait();
+					System.out.println("wait   end ThreadName=" + Thread.currentThread().getName());
+				}
+				ValueObject.list.remove(0);
+				System.out.println("list size=" + ValueObject.list.size());
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+//测试类
+public class Run {
+	public static void main(String[] args) throws InterruptedException {
+
+		//锁对象
+		String lock = new String("");
+
+		ThreadSubtract subtract1Thread = new ThreadSubtract(lock,"subtract1Thread");
+		subtract1Thread.start();
+
+		ThreadSubtract subtract2Thread = new ThreadSubtract(lock,"subtract2Thread");
+		subtract2Thread.start();
+
+		Thread.sleep(1000);
+
+		ThreadAdd addThread = new ThreadAdd(lock,"addThread");
+		addThread.start();
+
+	}
+}/* Output: 
+        wait begin ThreadName=subtract1Thread
+        wait begin ThreadName=subtract2Thread
+        wait   end ThreadName=subtract2Thread
+        list size=0
+        wait   end ThreadName=subtract1Thread
+        Exception in thread "subtract1Thread"
+            java.lang.IndexOutOfBoundsException: Index: 0, Size: 0
+	        at java.util.ArrayList.rangeCheck(Unknown Source)
+        	at java.util.ArrayList.remove(Unknown Source)
+        	at test.ThreadSubtract.run(Run.java:49)
+ *///:~
+
+```
+
+当线程subtract1Thread 被唤醒后，将从 wait处 继续执行。但由于 线程subtract2Thread 先获取到锁得到运行，导致 线程subtract1Thread 的 wait的条件发生变化（不再满足），而 线程subtract1Thread 却毫无所知，导致异常产生。
+
+像这种有多个相同类型的线程场景，为防止wait的条件发生变化而导致的线程异常终止，我们在阻塞线程被唤醒的同时还必须对wait的条件进行额外的检查，如下所示：
+
+```java
+//元素删除线程
+class ThreadSubtract extends Thread {
+
+	private String lock;
+
+	public ThreadSubtract(String lock,String name) {
+		super(name);
+		this.lock = lock;
+	}
+
+	@Override
+	public void run() {
+		try {
+			synchronized (lock) {
+				while (ValueObject.list.size() == 0) {    //将 if 改成 while 
+					System.out.println("wait begin ThreadName=" + Thread.currentThread().getName());
+					lock.wait();
+					System.out.println("wait   end ThreadName=" + Thread.currentThread().getName());
+				}
+				ValueObject.list.remove(0);
+				System.out.println("list size=" + ValueObject.list.size());
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+}/* Output: 
+        wait begin ThreadName=subtract1Thread
+        wait begin ThreadName=subtract2Thread
+        wait   end ThreadName=subtract2Thread
+        list size=0
+        wait   end ThreadName=subtract1Thread
+        wait begin ThreadName=subtract1Thread
+ *///:~
+
+```
+
+只需将 线程类ThreadSubtract 的 run()方法中的 if 条件 改为 while 条件 即可。
+
+### Condition
+
+Condition是在java 1.5中出现的，它用来替代传统的Object的wait()/notify()实现线程间的协作，它的使用依赖于 Lock，Condition、Lock 和 Thread 三者之间的关系如下图所示。相比使用Object的wait()/notify()，使用Condition的await()/signal()这种方式能够更加安全和高效地实现线程间协作。Condition是个接口，基本的方法就是await()和signal()方法。Condition依赖于Lock接口，生成一个Condition的基本代码是lock.newCondition() 。 必须要注意的是，Condition 的 await()/signal() 使用都必须在lock保护之内，也就是说，必须在lock.lock()和lock.unlock之间才可以使用。事实上，Conditon的await()/signal() 与 Object的wait()/notify() 有着天然的对应关系：
+
+<img src="D:\学习用\找工作\For_Work\Github面试题\图片\Thread - Condition.png" alt="Thread - Condition" style="zoom:50%;" />
+
+使用Condition往往比使用传统的通知等待机制(Object的wait()/notify())要更灵活、高效，例如，我们可以使用多个Condition实现**通知部分线程**：
+
+```java
+// 线程 A
+class ThreadA extends Thread {
+	private MyService service;
+	public ThreadA(MyService service) {
+		super();
+		this.service = service;
+	}
+	@Override
+	public void run() {
+		service.awaitA();
+	}
+}
+// 线程 B
+class ThreadB extends Thread {
+    private MyService service;
+	public ThreadB(MyService service) {
+		super();
+		this.service = service;
+	}
+	@Override
+	public void run() {
+		service.awaitB();
+	}
+}
+
+class MyService {
+	private Lock lock = new ReentrantLock();
+	// 使用多个Condition实现通知部分线程
+	public Condition conditionA = lock.newCondition();
+	public Condition conditionB = lock.newCondition();
+
+	public void awaitA() {
+	    lock.lock();
+	    try {
+		    System.out.println("begin awaitA时间为" + System.currentTimeMillis()
+			    	+ " ThreadName=" + Thread.currentThread().getName());
+		    conditionA.await();
+		    System.out.println("  end awaitA时间为" + System.currentTimeMillis()
+			    	+ " ThreadName=" + Thread.currentThread().getName());
+	    } catch (InterruptedException e) {
+		    e.printStackTrace();
+	    } finally {
+		    lock.unlock();
+	    }
+    }
+
+	public void awaitB() {
+	    lock.lock();
+		try {
+			System.out.println("begin awaitB时间为" + System.currentTimeMillis()
+					+ " ThreadName=" + Thread.currentThread().getName());
+			conditionB.await();
+			System.out.println("  end awaitB时间为" + System.currentTimeMillis()
+					+ " ThreadName=" + Thread.currentThread().getName());
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	public void signalAll_A() {
+		try {
+			lock.lock();
+			System.out.println("  signalAll_A时间为" + System.currentTimeMillis()
+					+ " ThreadName=" + Thread.currentThread().getName());
+			conditionA.signalAll();
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	public void signalAll_B() {
+		try {
+			lock.lock();
+			System.out.println("  signalAll_B时间为" + System.currentTimeMillis()
+					+ " ThreadName=" + Thread.currentThread().getName());
+			conditionB.signalAll();
+		} finally {
+			lock.unlock();
+		}
+	}
+}
+
+// 测试
+public class Run {
+	public static void main(String[] args) throws InterruptedException {
+	    MyService service = new MyService();
+
+	    ThreadA a = new ThreadA(service);
+	    a.setName("A");
+	    a.start();
+
+    	ThreadB b = new ThreadB(service);
+	    b.setName("B");
+    	b.start();
+
+	    Thread.sleep(3000);
+	    service.signalAll_A();
+    }
+}
+
+```
+
+实际上，**Condition 实现了一种分组机制，将所有对临界资源进行访问的线程进行分组，以便实现线程间更精细化的协作，例如通知部分线程。**我们可以从上面例子的输出结果看出，只有conditionA范围内的线程A被唤醒，而conditionB范围内的线程B仍然阻塞。
+
+### 生产者-消费者模型
+
+[两种实现例子](https://blog.csdn.net/justloveyou_/article/details/54929949?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522163827629816780255216790%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fblog.%2522%257D&request_id=163827629816780255216790&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_v2~times_rank-10-54929949.pc_v2_rank_blog_default&utm_term=%E5%B9%B6%E5%8F%91&spm=1018.2226.3001.4450)
+
+### 线程间的通信：管道
+
+PipedInputStream类 与 PipedOutputStream类 用于在应用程序中创建管道通信。一个PipedInputStream实例对象必须和一个PipedOutputStream实例对象进行连接而产生一个通信管道。PipedOutputStream可以向管道中写入数据，PipedIntputStream可以读取PipedOutputStream向管道中写入的数据，这两个类主要用来完成线程之间的通信。一个线程的PipedInputStream对象能够从另外一个线程的PipedOutputStream对象中读取数据。
+
+PipedInputStream和PipedOutputStream的实现原理类似于"生产者-消费者"原理，PipedOutputStream是生产者，PipedInputStream是消费者。在PipedInputStream中，有一个buffer字节数组，默认大小为1024，作为缓冲区，存放"生产者"生产出来的东西。此外，还有两个变量in和out —— in用来记录"生产者"生产了多少，out是用来记录"消费者"消费了多少，in为-1表示消费完了，in==out表示生产满了。当消费者没东西可消费的时候，也就是当in为-1的时候，消费者会一直等待，直到有东西可消费。
+
+### 方法 join() 的使用
+
+1. join() 的定义
+
+   **假如在main线程中调用thread.join方法，则main线程会等待thread线程执行完毕或者等待一定的时间。**详细地，如果调用的是无参join方法，则等待thread执行完毕；如果调用的是指定了时间参数的join方法，则等待一定的时间。join()方法有三个重载版本：
+
+   ```java
+   public final synchronized void join(long millis) throws InterruptedException {...}
+   public final synchronized void join(long millis, int nanos) throws InterruptedException {...}
+   public final void join() throws InterruptedException {...}
+   ```
+
+   以 join(long millis) 方法为例，其内部调用了Object的wait()方法，如下图：
+
+   <img src="D:\学习用\找工作\For_Work\Github面试题\图片\join 的定义.png" alt="join 的定义" style="zoom: 67%;" />
+
+   根据以上源代码可以看出，join()方法是通过wait()方法 (Object 提供的方法) 实现的。当 millis == 0 时，会进入 while(isAlive()) 循环，并且只要子线程是活的，宿主线程就不停的等待。 wait(0) 的作用是让当前线程(宿主线程)等待，而这里的当前线程是指 Thread.currentThread() 所返回的线程。所以，虽然是子线程对象(锁)调用wait()方法，但是阻塞的是宿主线程。
+
+   比如，在A里面写了b.wait()，则并非b陷入等待，而是持有b的A进入b的等待池，等待有线程调用b的notify唤醒。在join里面，因为thread本身就是一个对象，所以每个thread也都有自己的wait方法。所以主线程可以调用子线程的join来让自己进入子线程的等待池，然后子线程执行完或者到时间后，子线程在jvm里调用notifyAll唤醒主线程。
+
+2. join() 使用实例及原理
+
+   ```java
+   //示例代码
+   public class Test {
+        
+       public static void main(String[] args) throws IOException  {
+           System.out.println("进入线程"+Thread.currentThread().getName());
+           Test test = new Test();
+           MyThread thread1 = test.new MyThread();
+           thread1.start();
+           try {
+               System.out.println("线程"+Thread.currentThread().getName()+"等待");
+               thread1.join();
+               System.out.println("线程"+Thread.currentThread().getName()+"继续执行");
+           } catch (InterruptedException e) {
+               // TODO Auto-generated catch block
+               e.printStackTrace();
+           }
+       } 
+        
+       class MyThread extends Thread{
+           @Override
+           public void run() {
+               System.out.println("进入线程"+Thread.currentThread().getName());
+               try {
+                   Thread.currentThread().sleep(5000);
+               } catch (InterruptedException e) {
+                   // TODO: handle exception
+               }
+               System.out.println("线程"+Thread.currentThread().getName()+"执行完毕");
+           }
+       }
+   }/* Output:
+           进入线程main
+           线程main等待
+           进入线程Thread-0
+           线程Thread-0执行完毕
+           线程main继续执行
+    *///~
+   
+   ```
+
+   由于 join方法 会调用 wait方法 让宿主线程进入阻塞状态，并且会释放线程占有的锁，并交出CPU执行权限。结合 join 方法的声明，可以总结出以下三条：
+
+       join方法同样会会让线程交出CPU执行权限；
+       
+       join方法同样会让线程释放对一个对象持有的锁；
+       
+       如果调用了join方法，必须捕获InterruptedException异常或者将该异常向上层抛出。
+
+
+
+### Lock
+
+https://blog.csdn.net/justloveyou_/article/details/54972105
+
+
+
+## Java线程池
+
+### 什么是线程池
+
+线程池其实就是一种多线程处理形式，处理过程中可以将任务添加到队列中，然后在创建线程后自动启动这些任务。这里的线程就是我们前面学过的线程,这里的任务就是我们前面学过的实现了Runnable或Callable接口的实例对象;
+
+### 为什么使用线程池
+
+使用线程池最大的原因就是可以根据系统的需求和硬件环境灵活的控制线程的数量,且可以对所有线程进行统一的管理和控制,从而提高系统的运行效率,降低系统运行运行压力;当然了,使用线程池的原因不仅仅只有这些,我们可以从线程池自身的优点上来进一步了解线程池的好处;
+
+### 使用线程池有哪些优势
+
+1. 线程和任务分离,提升线程重用性;
+2. 控制线程并发数量,降低服务器压力,统一管理所有线程;
+3. 提升系统响应速度,假如创建线程用的时间为T1，执行任务用的时间为T2,销毁线程用的时间为T3，那么使用线程池就免去了T1和T3的时间；
+
+### Java内置线程池原理剖析
+
+#### ThreadPoolExecutor部分源码
+
+```java
+构造方法:
+public ThreadPoolExecutor(int corePoolSize, //核心线程数量
+                              int maximumPoolSize,//     最大线程数
+                              long keepAliveTime, //       最大空闲时间
+                              TimeUnit unit,         //        时间单位
+                              BlockingQueue<Runnable> workQueue,   //   任务队列
+                              ThreadFactory threadFactory,    // 线程工厂
+                              RejectedExecutionHandler handler  //  饱和处理机制
+	) 
+{ ... }
+```
+
+#### ThreadPoolExecutor参数详解
+
+```
+我们可以通过下面的场景理解ThreadPoolExecutor中的各个参数;
+a客户(任务)去银行(线程池)办理业务,但银行刚开始营业,窗口服务员还未就位(相当于线程池中初始线程数量为0),
+于是经理(线程池管理者)就安排1号工作人员(创建1号线程执行任务)接待a客户(创建线程);
+在a客户业务还没办完时,b客户(任务)又来了,于是经理(线程池管理者)就安排2号工作人员(创建2号线程执行任务)接待b客户(又创建了一个新的线程);假设该银行总共就2个窗口(核心线程数量是2);
+紧接着在a,b客户都没有结束的情况下c客户来了,于是经理(线程池管理者)就安排c客户先坐到银行大厅的座位上(空位相当于是任务队列)等候,
+并告知他: 如果1、2号工作人员空出,c就可以前去办理业务;
+此时d客户又到了银行,(工作人员都在忙,大厅座位也满了)于是经理赶紧安排临时工(新创建的线程)在大堂站着,手持pad设备给d客户办理业务;
+假如前面的业务都没有结束的时候e客户又来了,此时正式工作人员都上了,临时工也上了,座位也满了(临时工加正式员工的总数量就是最大线程数),
+于是经理只能按《超出银行最大接待能力处理办法》(饱和处理机制)拒接接待e客户;
+最后,进来办业务的人少了,大厅的临时工空闲时间也超过了1个小时(最大空闲时间),经理就会让这部分空闲的员工人下班.(销毁线程)
+但是为了保证银行银行正常工作(有一个allowCoreThreadTimeout变量控制是否允许销毁核心线程,默认false),即使正式工闲着,也不得提前下班,所以1、2号工作人员继续待着(池内保持核心线程数量);
+
+```
+
+
+
+
+
+
+
+
 
 ## 通过面试题分析
 
