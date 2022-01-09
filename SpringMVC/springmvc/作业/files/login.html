@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/lib/css/bootstrap.3.3.7.min.css">
+    <script src="assets/lib/js/jquery.2.2.1.min.js"></script>
+    <script src="assets/lib/js/bootstrap.3.3.7.min.js"></script>
+    <style>
+        html,body{
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: "宋体";
+        }
+        body{
+            background: url("assets/img/bg.jpg") 0 / cover fixed;
+            position: relative;
+            background-color:#888;
+        }
+        form{
+            padding:20px 40px;
+        }
+        #main{
+            background: rgba(255,255,255,0.96);
+            box-shadow: 20px 20px 50px rgba(0,0,0,0.86);
+            position: absolute;
+            top:50%;
+            left:50%;
+            height:460px;
+            width: 440px;
+            margin-top: -230px;
+            margin-left: -220px;
+            border-radius: 8px;
+        }
+        #logo{
+            padding-top: 20px;
+            display:block;
+            margin: 0 auto;
+            width: 140px;
+            border-radius: 100%;
+        }
+        .form-group{
+            padding-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="main">
+        <img src="assets/img/logo.png" alt="" id="logo">
+        <form action="showAllFiles.html" class="form-horizontal">
+            <div class="form-group">
+                <label for="username" class="control-label col-sm-3">用户名：</label>
+                <div class="col-sm-9">
+                    <input type="text" name="username" id="username" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password" class="control-label col-sm-3">密码：</label>
+                <div class="col-sm-9">
+                    <input type="password" name="password" id="password" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="vcode" class="control-label col-sm-3">验证码：</label>
+                <div class="col-sm-5">
+                    <input type="text" name="vcode" id="vcode" class="form-control">
+                </div>
+                <div class="col-sm-4">
+                    <img src="assets/img/vcode.png" alt="" style="width: 100%">
+                </div>
+            </div>
+            <div style="text-align: center">
+                <button type="submit" class="btn btn-primary btn-lg" style="width:60%">登 录</button>
+            </div>
+        </form>
+    </div>
+    <script>
+    </script>
+</body>
+</html>

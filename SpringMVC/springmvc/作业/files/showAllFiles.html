@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>主页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/lib/css/bootstrap.3.3.7.min.css">
+    <script src="assets/lib/js/jquery.2.2.1.min.js"></script>
+    <script src="assets/lib/js/bootstrap.3.3.7.min.js"></script>
+    <style>
+        html,body{
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .title1{
+            font-size: 28px;
+            line-height: 2em;
+        }
+        th,td{
+            line-height: 36px !important;
+            text-align: center;
+        }
+        td{
+            overflow: hidden;
+            text-overflow:ellipsis;
+            white-space: nowrap;
+            cursor: default;
+            vertical-align: middle !important;
+        }
+        .btn-link{
+            padding: 6px 6px;
+        }
+        .btn-link + .btn-link{
+            padding-left:0;
+        }
+
+    </style>
+</head>
+<body>
+<div style="margin: 0 auto;width: 90%;min-width:1200px;padding-top: 20px;">
+	<h1>欢迎:张三</h1><br>
+    <table class="table table-bordered" style="table-layout: fixed">
+        <thead>
+        <tr>
+            <th style="width: 10%">文件ID</th>
+            <th style="width: 8%">原始名称</th>
+            <th style="width: 8%">新文件名称</th>
+            <th style="width: 64px">文件后缀</th>
+            <th style="width: 10%">存储路径</th>
+            <th style="width: 60px">大小</th>
+            <th style="width: 8%">文件类型</th>
+            <th style="width: 100px">是否是图片</th>
+            <th style="width: 64px">下载次数</th>
+            <th style="width: 160px">操作</th>
+        </tr>
+        </thead>
+        <tbody valign="center">
+            <tr>
+                <td title="ded91c71-b9b4-11e9-a298-0235d2b38928">ded91c71-b9b4-11e9-a298-0235d2b38928</td>
+                <td title="张三.txt">张三.txt</td>
+                <td title="ded91c71-b9b4-11e9-a298-0235d2b38928.txt">ded91c71-b9b4-11e9-a298-0235d2b38928.txt</td>
+                <td>.txt</td>
+                <td title="/files/2019-08-08/ded91c71-b9b4-11e9-a298-0235d2b38928.txt">/files/2019-08-08/ded91c71-b9b4-11e9-a298-0235d2b38928.txt</td>
+                <td title="1024">1024</td>
+                <td>text/plain</td>
+                <td>否</td>
+                <td>10</td>
+                <td>
+                    <button class="btn btn-link">下载</button>
+                    <button class="btn btn-link">在线打开</button>
+                    <button class="btn btn-danger">删除</button>
+                </td>
+            </tr>
+            <tr>
+                <td title="ded91c72-b9b4-11e9-a298-0235d2b38928">ded91c72-b9b4-11e9-a298-0235d2b38928</td>
+                <td title="sphoto.png">sphoto.png</td>
+                <td title="ded91c72-b9b4-11e9-a298-0235d2b38928.txt">ded91c72-b9b4-11e9-a298-0235d2b38928.png</td>
+                <td>.png</td>
+                <td title="/files/2019-08-08/ded91c72-b9b4-11e9-a298-0235d2b38928.txt">/files/2019-08-08/ded91c72-b9b4-11e9-a298-0235d2b38928.png</td>
+                <td title="30283">30283</td>
+                <td>image/png</td>
+                <td><img src="assets/img/sphoto.png" alt="" style="max-height: 100px;max-width: 100%"></td>
+                <td>10</td>
+                <td>
+                    <button class="btn btn-link">下载</button>
+                    <button class="btn btn-link">在线打开</button>
+                    <button class="btn btn-danger">删除</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <form action="" enctype="multipart/form-data" method="post">
+
+        <label class="btn btn-primary" for="fileup" style="float: left">
+            选择文件
+        </label>
+        <input type="file" name="file" id="fileup" style="display:none;">
+        <div style="width:320px;float: left">
+            <input type="text" id="fileshow" class="form-control" value="未选择任何文件" readonly>
+        </div>
+        <button class="btn btn-default" type="submit">上 传</button>
+    </form>
+
+</div>
+<script>
+    var fileup = $("#fileup");
+    var fileshow = $("#fileshow");
+
+    fileup.on("change",function () {
+        fileshow.val(fileup.val())
+    })
+</script>
+</body>
+</html>

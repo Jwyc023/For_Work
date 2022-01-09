@@ -1,0 +1,38 @@
+
+1.谈谈spring中IOC和AOP的理解? 2分(答对其中一个一分)
+
+	IOC 控制反转: new 工厂 0.5 
+	DI : 依赖注入         0.5
+
+	AOP: 面向切面编程  底层通过动态为项目中某些类在程序运行过程中创建代理对象,通过代理对象解决项目通用问题冗余问题    1分
+
+2.说出一下注解的作用@Service,@Transactional,@Scope,? (3分一个一分)
+	@Service 用来在工厂中创建对象  主要用于业务才能组件的创建
+	@Transactional 用来控制事务 加载类 类中所有方法 均有事务  加载方法 
+	@Scope 用来控制工厂创建对象的次数  singleton  prototype
+
+3.说出SpringMVC如何接收客户端的请求参数的语法?1分(全部答对一分)
+	使用控制器方法参数接收请求参数 要求:参数变量名与请求参数key一致或者form name属性
+
+4.@ResponseBody注解作用,以及底层使用的json转换工具是(1分,答对一半0.5)
+	
+	用来将控制方法返回值转为json 并响应给对应请求 
+	底层使用的json工具 jackson 
+
+5.说出下面代码配置的作用 1分(全部答对1分)
+	作用: 用来在启动服务器时启动工厂的监听器
+  <listener>
+ 	<listener-class>org.springframework.web.context.ContextLoaderListener
+ 	</listener-class>
+  </listener>
+
+6.说出spring中的注入方式有几种,分别是什么? 1分(全部答对1分)
+	3种   set 构造  自动
+
+7.说明spring工厂管理对象的生命周期? 1分(答对一半0.5)
+
+	单例: 工厂启动工厂中所有单例对象随之创建 工厂销毁 工厂中单例对象随之小
+
+	多例: 每次在工厂中获取时创建   工厂不负责销毁
+
+

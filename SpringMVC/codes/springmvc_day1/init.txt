@@ -1,0 +1,71 @@
+springmvc
+
+1.springmvc 是什么
+
+    springmvc  是 spring  基础上开发控制器框架  在现有mvc架构中充当也是控制器  典型mvc框架
+
+    springmvc  本质替换原有项目中struts2技术
+
+2.springmvc第一个环境搭建
+
+  1).引入依赖
+  2).配置web.xml 核心  DispatcherServlet   url-pattern /
+     <servlet>
+        <init-param>
+            <param-name>contextConfigLocaiton</param-name>
+            <param-value>classpath:springmvc.xml</param-value>
+     </servlet>
+
+  3).引入springmvc配置文件
+
+    a.开启注解扫描配置
+    b.注册处理器适配器 和 处理器映射器
+      <mvc:annotation-driven></mvc:annotation-driven>
+    c.配置视图解析器  前缀 /  后缀 .jsp
+
+  4).开发控制器 @controller  @requestMapping("路径")
+
+    public String test(){
+        //1.收集数据
+        //2.调用业务对象
+        //3.响应处理 流程跳转
+        return "index";//页面逻辑名
+    }
+
+3.springmvc中跳转
+
+    forward:   一次请求 服务器内部跳转 跳转之后地址栏不变  可以使用request作用域传递数据
+    redirect:  多次请求 客户端跳转    跳转之后地址栏改变  不可以使用request作用域传递数据
+
+    Controller ---->JSP:
+
+       forward:   默认就是forward跳转   return  "页面逻辑名";
+       redirect:  使用redirect:关键字 return "redirect:页面视图全名" => return "redirect:/index.jsp"
+
+    Controller ---->Controller(相同|不同):
+       forward:|redirect:
+
+    总结: return "forward:|redirect:/跳转类上@requestMapping路径/跳转类中指定方法上@requestMapping的路径"
+
+
+
+4.springmvc参数接收
+
+    语法: springmvc 使用控制器方法参数收集客户端请求数据
+
+    要求: 要求请求参数传递key 必须 与 控制器方法中声明形参变量名一致 即可完成自动赋值
+
+    1.零散类型参数接收
+         基本要求:要求请求参数传递key 必须 与 控制器方法中声明形参变量名一致 即可完成自动赋值
+    2.对象类型参数接收
+         基本要求:要求请求参数传递key 必须 与控制器方法中声明的对象中属性名一致 springmvc自动完成对象封装
+    3.数组或集合类型参数接收
+         数组基本要求: 要求请求参数传递多个key 要与 控制器方法中声明的数组变量名一致 springmvc会自动将多个数据放入同一个数组中
+         集合类型要求: springmvc接收集合类型时必须将集合进行对象封装之后,使用对象形式接收集合类型的参数
+            List<String> lists;
+            CollectionVO{
+                private List<String> lists;
+            }
+            User{
+                private List<String> lists;
+            }
