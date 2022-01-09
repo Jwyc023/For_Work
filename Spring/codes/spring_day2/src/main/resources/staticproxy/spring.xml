@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+
+
+    <!--管理Service-->
+    <bean id="userService" class="staticproxy.UserServiceImpl"></bean>
+
+    <!--管理service 中proxy-->
+    <bean id="userServiceStaticProxy" class="staticproxy.UserServiceStaticProxy">
+        <!--依赖于真正业务逻辑对象-->
+        <property name="userService" ref="userService"/>
+    </bean>
+
+
+
+
+</beans>

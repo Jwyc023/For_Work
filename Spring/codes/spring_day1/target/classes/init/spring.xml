@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+
+
+    <!--通过spring管理组件
+        bean:   用来管理组件对象的创建
+        class:  用来指定管理组件对象的全限定名 包.类
+        id:     用来指定spring框架创建的当前组件对象在spring(容器|工厂)中唯一标识 全局唯一
+                推荐: 接口的首字母小写 userDAO
+    -->
+    <bean class="init.UserDAOImpl" id="userDAO"></bean>
+
+
+    <bean class="init.CityDAOImpl" id="cityDAO"></bean>
+
+
+
+</beans>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+
+
+    <!--管理DAO组件
+        scope: 用来指定工厂创建对象的模式
+                默认值:singleton  单例
+                      prototype  多例
+        生命周期方法:
+            init-method="" 在对象初始化调用方法
+            destroy-method=""  在对象销毁时调用方法
+    -->
+    <bean class="scope.TagDAOImpl" id="tagDAO" scope="prototype" init-method="init2001" destroy-method="destory"></bean>
+
+</beans>

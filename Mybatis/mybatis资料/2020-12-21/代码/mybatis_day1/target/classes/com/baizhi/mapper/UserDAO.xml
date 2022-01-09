@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<!--
+    namespace属性: 命名空间 用来书写当前mapper文件是对那个DAO接口的实现
+    全限定名: 包.类
+-->
+<mapper namespace="com.baizhi.dao.UserDAO">
+    <!--保存
+        insert:插入操作
+        id: 方法名
+        parameterType:参数类型 包.类
+        注意:1.insert标签内部写sql语句
+            2.#{对象中属性名}
+        useGeneratedKeys="true" 使用数据库自动生成id策略  这个属性只对mysql数据库有效
+        keyProperty="" 主键属性: 当使用数据库自动主键生成策略时,将自动生成主键值赋值给参数对象中那个属性
+    -->
+    <insert id="save" parameterType="com.baizhi.entity.User" keyProperty="id" useGeneratedKeys="true">
+        insert into t_user values (#{id},#{name},#{age},#{bir})
+    </insert>
+
+</mapper>

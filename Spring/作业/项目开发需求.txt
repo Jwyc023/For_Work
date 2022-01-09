@@ -1,0 +1,44 @@
+
+
+
+环境: SSM 建议从头开始搭建
+
+1.项目名 ems1.0
+2.项目编码 UTF-8
+3.技术选型: SSM + jQuery + Ajax + jsp + Mysql + tomcat
+4.项目中包结构:
+	
+	com.baizhi.xxxx
+			  .utils
+			  .entity
+			  .dao
+			  .service
+			  .action
+			  .xxxx
+
+	resources:
+		com/baizhi/mapper
+		spring.xml
+		struts.xml
+		log4j.properties
+
+	webapp
+		css
+		img
+		login.html
+		resgiter.html
+		....
+
+5.用户
+	登录 使用ajax完成,要求必须实现数据友情提示  用户名错   密码错
+	注册 
+
+6.员工管理
+	添加
+	删除  		删除之前加入确认删除
+	修改
+	查询所有     注意页面斑马线效果
+
+7.其他功能
+	1.登录之后展示用户名
+	2.未登录强制登录  拦截器

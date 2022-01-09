@@ -1,0 +1,75 @@
+
+
+Spring 整合mybatis中事务控制
+
+  事务相关属性
+
+
+    1.事务传播属性
+
+    2.事务隔离级别
+
+        读未提交
+        读提交    避免脏读现象 oracle
+        可重复读  避免不可重复读现象  mysql   行数据加锁
+        序列化读  避免幻影读现象             表加锁
+
+        注意:隔离级别越高 查询效率越低
+
+    3.事务读写性 readyonly
+
+    4.事务异常回滚
+      roll-back-for
+      no-roll-back-for
+
+    5.事务超时性 -1 永不超时
+
+
+
+
+Spring整合Struts2编程步骤
+
+    1.引入依赖
+        spring struts2 struts2-spring-plugin
+
+    2.编写web.xml
+
+        a).配置启动工厂监听器
+           ContextLoaderListener  listener 配置
+
+        b).配置全局初始化参数
+            <context-param>
+                <param-name>contextConfigLocation</param-name>
+                <param-value>classpath:spring.xml</param-value>
+            </context-param>
+
+        c).配置struts2核心filter
+
+            StrutsPrepareAndExecuteFilter
+
+            /*
+
+    3).引入struts.xml
+
+    4).开发Action
+
+    5).引入spring.xml
+
+        <bean id="" class="" scope="prototype">
+
+    6).配置struts.xml
+        <package name="" extends="" namespace="">
+
+          <action name="" class="bean的id">
+            ....
+          </action>
+
+        </package>
+
+
+
+    7).启动服务器测试
+
+
+
+

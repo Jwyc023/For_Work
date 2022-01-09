@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+
+    <!--创建数据源-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/2001?characterEncoding=UTF-8"/>
+        <property name="username" value="root"/>
+        <property name="password" value="root"/>
+    </bean>
+    <!--创建sqlSessionFactory-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--注入datasource mapperlocations typeAaialsPackage-->
+        <property name="dataSource" ref="dataSource"/>
+        <property name="mapperLocations" value="classpath:com/baizhi/mapper/*.xml"/>
+        <property name="typeAliasesPackage" value="com.baizhi.entity"/>
+    </bean>
+    <!--创建DAO-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--注入sqlSessionFactory dao接口所在包-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <property name="basePackage" value="com.baizhi.dao"/>
+    </bean>
+    <!--创建事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!--创建事务环绕通知并进行事务细粒度控制-->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <!--对方法进行细粒度事务控制-->
+        <tx:attributes>
+            <!--
+                propagation: 事务传播属性
+                   REQUIRED: 需要事务           如果外层没有事务 则开启新的事务   如果外层存在事务,则融入当前事务
+                   SUPPORTS: 支持事务           如果外层没有事务 不会开启新的事务 如果外层存在事务,则融入当前事务
+               REQUIRES_NEW: 每次开启新的事务     如果外层存在事务,外层事务挂起,自己开启新的事务执行,执行完成,恢复外层事务继续执行
+              NOT_SUPPORTED: 不支持事务         如果外层存在事务,外层事务挂起,自己以非事务方式执行,执行完成,恢复外部事务执行
+                      NEVER: 不能有事务         存在事务报错
+                  MANDATORY: 强制事务           没有事务报错
+                  NESTED   : 嵌套事务           事务之间可以嵌套运行 数据库 oracle mysql 不支持
+               isolation   : 事务隔离级别
+                    DEFAULT:            使用数据库默认的隔离级别  [推荐]
+                    READ_UNCOMMITTED:   读未提交  一个客户端读到了另一个客户端没有提交的数据  脏读现象
+                    READ_COMMITTED  :   读提交    一个客户端只能读到另一个客户端提交的数据   避免脏读现象 oracle
+                    REPEATABLE_READ :   可重复读  主要是用来避免不可重复读现象出现   行锁  mysql
+                    SERIALIZABLE    :   序列化读  主要是用来避免幻影读现象出现      表锁
+                    注意: 隔离级别越高,查询效率越低 一般推荐使用数据库默认隔离级别
+               read-only :事务读写性  true 只读 不能执行增删改操作 false:可读可写(mysql支持 oralce不支持)
+               rollback-for: 出现什么类型异常回滚  默认出现RuntimeException 及其子类异常回滚
+               no-rollback-for: 出现什么类型异常不会滚  java.lang.RuntimeException
+               timeout:  事务超时性  -1  永不超时
+                         设置>=0正整数  代表设置超时时间 单位 1秒
+            -->
+            <tx:method name="save*"  />
+            <tx:method name="update*"/>
+            <tx:method name="delete*"/>
+            <tx:method name="find*" propagation="SUPPORTS"/>
+        </tx:attributes>
+    </tx:advice>
+    <!--配置事务切面-->
+    <aop:config>
+        <aop:pointcut id="pc" expression="execution(* com.baizhi.service.*ServiceImpl.*(..))"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="pc"/>
+    </aop:config>
+
+
+    <!--管理service层组件-->
+    <bean id="userService" class="com.baizhi.service.UserServiceImpl">
+        <property name="userDAO" ref="userDAO"/>
+    </bean>
+
+
+    <bean id="aService" class="com.baizhi.service.AServiceImpl">
+        <property name="bbbbService" ref="bService"/>
+    </bean>
+
+    <bean id="bService" class="com.baizhi.service.BServiceImpl"></bean>
+
+
+</beans>

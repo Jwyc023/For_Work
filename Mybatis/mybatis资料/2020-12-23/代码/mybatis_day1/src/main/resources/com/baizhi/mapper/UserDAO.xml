@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<!--
+    namespace属性: 命名空间 用来书写当前mapper文件是对那个DAO接口的实现
+    全限定名: 包.类
+-->
+<mapper namespace="com.baizhi.dao.UserDAO">
+    <!--保存
+        insert:插入操作
+        id: 方法名
+        parameterType:参数类型 包.类
+        注意:1.insert标签内部写sql语句
+            2.#{对象中属性名}
+        useGeneratedKeys="true" 使用数据库自动生成id策略  这个属性只对mysql数据库有效
+        keyProperty="" 主键属性: 当使用数据库自动主键生成策略时,将自动生成主键值赋值给参数对象中那个属性
+    -->
+    <insert id="save" parameterType="com.baizhi.entity.User" keyProperty="id" useGeneratedKeys="true">
+        insert into t_user
+        values (#{id}, #{name}, #{age}, #{bir})
+    </insert>
+
+
+    <!--更新方法-->
+    <update id="update" parameterType="com.baizhi.entity.User">
+        update t_user
+        <set><!--set标签动态去掉 赋值语句前后多余, -->
+            <!--test里面属性name为对象的属性名-->
+            <if test="name!=null and name!=''">
+                name=#{name},
+            </if>
+            <if test="age!=null">
+                age=#{age},
+            </if>
+            <if test="bir!=null">
+                bir=#{bir}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+
+    <!--删除方法-->
+    <delete id="delete" parameterType="Integer">
+        delete
+        from t_user
+        where id = #{id}
+    </delete>
+
+
+    <!--查询所有
+        resultType: list集合的泛型类型 com.baizhi.entity.User
+    -->
+    <!--sql标签:用来实现sql语句复用 id:相当于给sql标签中内容定义一个唯一标识-->
+    <sql id="userQuery">
+        select id, name as uname, age, bir
+        from t_user
+    </sql>
+
+
+    <!--结果映射 id:resultMap标签起一个唯一标识 type:指定封装对象的类型  -->
+    <resultMap id="userResultMap" type="com.baizhi.entity.User">
+        <!--主键封装: id标签-->
+        <id column="id" property="id"/>
+        <!--普通列 result-->
+        <result column="uname" property="name"/>
+        <result column="age" property="age"/>
+        <result column="bir" property="bir"/>
+    </resultMap>
+
+    <select id="queryAll" resultMap="userResultMap">
+        <include refid="userQuery"/><!--include:包含那个sql片段 refid:包含片段的id-->
+    </select>
+
+
+    <!--查询一个id-->
+    <select id="queryById" parameterType="Integer" resultType="com.baizhi.entity.User">
+        <include refid="userQuery"/>
+        where id=#{id}
+    </select>
+    
+    <!--根据名字模糊查询-->
+    <select id="queryLikeByName" parameterType="String" resultType="com.baizhi.entity.User">
+       <include refid="userQuery"/>
+        <!--oarlce: '%'||#{name}'%' mysql: concat('%',#{name},'%')-->
+        where name like concat('%',#{name},'%')
+    </select>
+
+    <!--分页查询 多个参数不写parameterType-->
+    <select id="queryByPage" resultType="com.baizhi.entity.User">
+        <include refid="userQuery"/>
+        limit #{start},#{rows}
+    </select>
+    
+    <!--查询总条数-->
+    <select id="queryTotalCounts" resultType="Long">
+        select count(id) from t_user
+    </select>
+
+</mapper>

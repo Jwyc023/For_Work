@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.baizhi.dao.PersonDAO">
+    <!--保存用户信息的方法-->
+    <insert id="save" parameterType="com.baizhi.entity.Person" useGeneratedKeys="true" keyProperty="id">
+        insert into t_person
+        values (#{id}, #{name}, #{age}, #{cardno})
+    </insert>
+
+
+    <!--用来处理结果封装-->
+    <resultMap id="personMap" type="com.baizhi.entity.Person">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="age" property="age"/>
+        <result column="cardno" property="cardno"/>
+        <!--处理一对一 association 用来处理一对一关联关系标签 property: 用来书写封装的关系属性名 javaType:关系属性的java类型-->
+        <association property="info" javaType="com.baizhi.entity.Info">
+            <id column="iid" property="id"/>
+            <result column="icardno" property="cardno"/>
+            <result column="address" property="address"/>
+        </association>
+    </resultMap>
+
+    <!--查询所有-->
+    <select id="queryAll" resultMap="personMap">
+        select p.id,
+               p.name,
+               p.age,
+               p.cardno,
+               i.id     iid,
+               i.cardno icardno,
+               i.address
+        from t_person p
+        left join t_info i
+        on p.cardno = i.cardno
+    </select>
+
+</mapper>

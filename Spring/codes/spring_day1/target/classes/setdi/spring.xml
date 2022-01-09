@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+
+    <!--管理DAO组件-->
+    <bean class="setdi.ClazzDAOImpl" id="clazzDAO"></bean>
+
+
+    <!--管理Service组件-->
+    <bean class="setdi.ClazzServiceImpl" id="clazzService">
+
+        <!--使用property完成属性赋值操作-->
+        <property name="clazzDAO" ref="clazzDAO"/>
+
+        <!--SET注入相关语法 总结: 八种基本类型+ String类型注入使用+Date类型 使用value属性进行赋值 -->
+        <property name="name" value="张三"/>
+        <property name="age" value="23"/>
+        <property name="sex" value="true"/>
+        <property name="counts" value="23.23"/>
+        <property name="price" value="256.34"/>
+        <!--注意: 在spring技术栈中日期格式默认为yyyy/MM/dd HH:mm:ss-->
+        <property name="bir" value="2012/12/12 23:54:57"/>
+        <!--注入数组类型 array-->
+        <property name="qqs">
+            <array>
+                <value>小陈</value>
+                <value>小三</value>
+                <value>小胡</value>
+                <value>小杨</value>
+            </array>
+        </property>
+        <property name="clazzDAOS">
+            <array>
+                <ref bean="clazzDAO"/>
+                <ref bean="clazzDAO"/>
+                <ref bean="clazzDAO"/>
+            </array>
+        </property>
+        <!--注入list集合 list-->
+        <property name="habbys">
+            <list>
+                <value>看书</value>
+                <value>睡觉</value>
+                <value>喝水</value>
+            </list>
+        </property>
+        <property name="clazzDAOList">
+            <list>
+                <ref bean="clazzDAO" />
+                <ref bean="clazzDAO" />
+                <ref bean="clazzDAO" />
+            </list>
+        </property>
+        <!--注入map entry -->
+        <property name="maps">
+            <map>
+                <entry key="aa" value="xiaochen"/>
+                <entry key="bb" value="张三"/>
+                <entry key="cc" value="xiaoming"/>
+            </map>
+        </property>
+        <!--注入poperties-->
+        <property name="properties">
+            <props>
+                <prop key="driver">com.mysql.jdbc.Driver</prop>
+                <prop key="url">jdbc:mysql://localhost:3306/test</prop>
+                <prop key="username">root</prop>
+                <prop key="password">root</prop>
+            </props>
+        </property>
+
+    </bean>
+
+
+</beans>

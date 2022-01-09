@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/tx
+                           http://www.springframework.org/schema/tx/spring-tx.xsd
+                           http://www.springframework.org/schema/aop
+                           http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+
+
+
+    <!--创建DataSource-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/2001?characterEncoding=UTF-8"/>
+        <property name="username" value="root"/>
+        <property name="password" value="root"/>
+    </bean>
+
+    <!--创建sqlSessionFactory-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--依赖数据源-->
+        <property name="dataSource" ref="dataSource"/>
+        <!--注入mapper配置文件-->
+        <!--<property name="mapperLocations">
+            <array>
+                <value>classpath:com/baizhi/mapper/UserDAOMapper.xml</value>
+                <value>classpath:com/baizhi/mapper/EmpDAOMapper.xml</value>
+            </array>
+        </property>-->
+        <!--注入mapper文件通用方式-->
+        <property name="mapperLocations" value="classpath:com/baizhi/mapper/*.xml"/>
+
+        <!--注入别名相关配置 typeAliasesPackage:用来给指定包中所有类起别名 默认的别名: 类名|类名首字母小写-->
+        <property name="typeAliasesPackage" value="com.baizhi.entity"/>
+    </bean>
+
+
+    <!--一次项目创建项目中所有DAO对象 MapperScannerConfigurer
+        MapperScannerConfigurer:
+            默认创建对象在工厂中唯一标识: 接口的首字母小写
+            UserDAO=====> userDAO  Userdao====>  userdao
+            OrderDAO====> orderDAO Orderdao====> orderdao
+            EmpDAO  ===>  empDAO
+     -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--注入sqlSessionFactory-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <!--扫描DAO接口所在包-->
+        <property name="basePackage" value="com.baizhi.dao"/>
+    </bean>
+
+
+
+    <!--&lt;!&ndash;创建DAO组件类&ndash;&gt;-->
+    <!--<bean id="userDAO" class="org.mybatis.spring.mapper.MapperFactoryBean">-->
+        <!--&lt;!&ndash;注入sqlSessionFactory&ndash;&gt;-->
+        <!--<property name="sqlSessionFactory" ref="sqlSessionFactory"/>-->
+        <!--&lt;!&ndash;注入创建DAO接口类型 注入接口的全限定名 包.接口名&ndash;&gt;-->
+        <!--<property name="mapperInterface" value="com.baizhi.dao.UserDAO"/>-->
+    <!--</bean>-->
+
+
+    <!--&lt;!&ndash;创建DAO组件类&ndash;&gt;-->
+    <!--<bean id="empDAO" class="org.mybatis.spring.mapper.MapperFactoryBean">-->
+        <!--&lt;!&ndash;注入sqlSessionFactory&ndash;&gt;-->
+        <!--<property name="sqlSessionFactory" ref="sqlSessionFactory"/>-->
+        <!--&lt;!&ndash;注入创建DAO接口类型 注入接口的全限定名 包.接口名&ndash;&gt;-->
+        <!--<property name="mapperInterface" value="com.baizhi.dao.EmpDAO"/>-->
+    <!--</bean>-->
+
+
+    <!--管理Service组件-->
+    <bean id="userService" class="com.baizhi.service.UserServiceImpl">
+        <property name="userDAO" ref="userDAO"/>
+    </bean>
+
+
+
+    <!--数据源事务管理-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!--注入数据源对象-->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+
+    <!--tx:advice标签
+        id: 基于事务管理器创建的环绕通知对象在工厂中唯一标识
+        作用:
+            1.根据指定的事务管理器在工厂中创建一个事务的环绕通知对象
+            2.对业务层方法进行细粒度事务控制
+    -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <!--事务细粒度配置-->
+        <tx:attributes>
+            <tx:method name="save*"/>
+            <tx:method name="add*"/>
+            <tx:method name="insert*"/>
+            <tx:method name="delete*"/>
+            <tx:method name="update*"/>
+        </tx:attributes>
+    </tx:advice>
+
+
+    <!--配置事务切面-->
+    <aop:config>
+        <aop:pointcut id="pc" expression="within(com.baizhi.service.*ServiceImpl)"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="pc"/>
+    </aop:config>
+
+
+
+</beans>

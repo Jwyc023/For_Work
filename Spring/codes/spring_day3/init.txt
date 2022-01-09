@@ -1,0 +1,56 @@
+
+spring 框架核心
+
+
+    1).IOC and DI
+
+        Inversion of Controll 控制反转  Dependency Injection 依赖注入
+
+        定义: 就是将手动通过new关键字创建对象的权力交给spring,交给工厂由工厂创建对象,
+             spring不仅要创建对象还要在创建对象的同时维护组件与组件的依赖关系
+
+
+    2).AOP
+
+        Aspects(切面) Oriented(面向) Programming(编程)
+
+        底层原理: java中动态代理对象的封装
+
+        定义: 通过在程序运行的过程中动态的为项目中某些组件生成动态代理对象,
+             通过在生成的动态代理对象中执行相应的附加操作|额外功能,减少项目中通用代码的冗余问题
+
+        通知:(advice) 除了核心业务方法以外的附加操作都称之为通知 额外功能  事务通知....性能 日志 ...
+
+        切入点:(pointcut) 用来指定项目中那些组件中那些方法需要加入 通知(附加操作,额外功能) 业务层组件
+
+        切面:(aspect)    =  通知 + 切入点
+
+
+        myadvice1  性能
+        myadvice2  日志
+
+        1).工厂管理通知
+            myadvice1
+            myadvice2
+
+        2).配置切面
+
+            <aop:config>
+               <aop:pointcut id="pc" expression="execution()|within()"/>
+               <aop:pointcut id="pc1" expression="execution()|within()"/>
+               ....
+               <aop:advisor advice-ref="myadvice1" pointcut-ref="pc"/>
+               <aop:advisor advice-ref="myadvice2" pointcut-ref="pc"/>
+               ........
+            <aop:config>
+
+========================================================================================
+
+
+
+
+
+
+
+
+

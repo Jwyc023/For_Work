@@ -1,0 +1,88 @@
+1.spring框架?
+
+  spring 框架 项目管理框架  核心 就是用来管理项目中组件对象的创建 使用 销毁
+
+2.spring框架第一个环境搭建
+
+  a).引入依赖
+     spring-core
+     spring-context
+     spring-beans
+     spring-expression
+     spring-jdbc
+     spring-web
+     .....
+  b).引入spring.xml
+     名字 随便  位置:resources目录下随便
+
+  c).通过spring管理组件的创建
+    interface UserDAO { void save(String name)}
+    class UserDAOImpl implements UserDAO
+
+    spring.xml
+
+     <bean clsss="xxx.UserDAOImpl" id="userDAO" />
+
+  d).启动工厂
+    ApplicationContext  context = new ClassPathXmlApplicationContext("xxx/spring.xml");
+
+    context.getBean("beanid");
+
+3).spring核心思想?
+
+    IOC&DI
+
+        IOC:inversion of controll 控制反转
+            就是将手动通过new关键字创建对象的权利交给spring,由工厂创建对象过程,
+        DI: Dependency Injection 依赖注入
+            Spring工厂不仅要创建对象还要在创建对象同时维护组件和组件的依赖关系
+
+    AOP: 面前切面编程
+
+4).spring中注入
+
+    SET方式[重点]    构造方法   自动注入
+
+    SET注入:
+            定义: 使用set方法形式为成员变量赋值过程称之为set注入
+            语法:
+                 1.需要谁将谁声明为成员变量并提供公开SET方法
+                 2.在spring配置文件中对应组件标签内部使用 property标签完成注入
+
+            1.String + 八种基本类型 + 日期类型 使用 value属性进行注入
+                <property name="name" value="xx">
+                注意: spring中日期格式 默认为 yyyy/MM/dd HH:mm:ss
+
+            2.对象|引用类型
+                <property name="" ref="beanid">
+
+            3.数组类型
+                array   value     引用: ref bean="beanid"
+
+            4.list set map
+                list    value     引用: ref
+                map  entry   key="" value=""  引用: key-ref="beanid" value-ref="beanid"
+
+            5.properties
+                props  prop  key=""   <prop key="">value</prop>
+
+
+5).spring工厂细节
+
+    1).创建方式 默认使用单例
+        <bean class="" id="" scope="singleton(service dao)|prototype(struts2action)">
+
+    2).工厂原理
+        反射+构造方法
+        Class.forName("xxxx").newInstance();
+
+    3).工厂生命周期
+
+        单例: 工厂启动工厂中单例对象随之创建   工厂正常关闭 工厂中单例对象随之销毁
+
+        多例: 每次使用时工厂进行多例对象的创建  spring工厂不负责多例对象的销毁
+=====================================================================================
+Spring中AOP
+
+    AOP:     面向切面的编程
+    java :  (Proxy)代理

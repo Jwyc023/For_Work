@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.baizhi.dao.EmpDAO">
+
+
+    <resultMap id="empMap" type="com.baizhi.entity.Emp">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="age" property="age"/>
+        <result column="bir" property="bir"/>
+        <!--封装部门信息-->
+        <association property="dept" javaType="com.baizhi.entity.Dept">
+            <id column="did" property="id"/>
+            <result column="dname" property="name"/>
+        </association>
+    </resultMap>
+
+    <!--查询所有-->
+    <select id="queryAll" resultMap="empMap">
+      select
+            e.id,e.name,e.age,e.bir,
+            d.id did,d.name dname
+      from t_emp e
+      left join t_dept d
+      on  e.deptid = d.id
+    </select>
+
+</mapper>
