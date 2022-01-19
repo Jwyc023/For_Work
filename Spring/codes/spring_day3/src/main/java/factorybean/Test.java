@@ -35,6 +35,7 @@ public class Test {
 //        System.out.println(calendar.getTime());
         SqlSessionFactory sqlSessionFactory = (SqlSessionFactory) context.getBean("sqlSessionFactory");
         SqlSession sqlSession = sqlSessionFactory.openSession();
+
         System.out.println(sqlSession);
 
 

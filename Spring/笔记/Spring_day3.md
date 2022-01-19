@@ -8,6 +8,7 @@
 //1.类 implements FactoryBean<创建的类型>
 
 	public class ConnectionFactoryBean implements FactoryBean<Connection> {
+        //这里说明这个类该如何成立对象（实际声明一个并返回）
     @Override
     public Connection getObject() throws Exception {
         Class.forName("com.mysql.jdbc.Driver");
@@ -53,6 +54,18 @@
 ### 4.mybatis中的核心对象有哪些
 
 > `Mybatis的核心对象为:  SqlSessionFactory`  整合就是通过Spring管理SqlSessionFactory对象的创建
+>
+> 1. Mapper：写明数据库操作的具体内容
+>
+> 2. 数据源：与数据库连接，创建conn池
+>
+> 3. SqlSessionFactory：配置数据源和mapper，创建sqlsession
+>
+> 4. SqlSession：实际对数据库做操作
+>
+>    注意一点，Connection对象是在SqlSession对象创建之后进行CURD操作中创建的。深入查找之后找到在ManagedTransaction类中找到获取Connection对象的关键代码。
+>
+>    
 
 ### 5.整合思路图示
 

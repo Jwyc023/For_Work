@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="eb3dce31-52fd-47d8-a89f-594486ced9ef" name="Changes" comment="" />
+    <list default="true" id="eb3dce31-52fd-47d8-a89f-594486ced9ef" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../spring_day1/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day1/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../图片/2.spring的第一个环境搭建.png" beforeDir="false" afterPath="$PROJECT_DIR$/../../图片/2.spring的第一个环境搭建.png" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -16,13 +19,6 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="MavenImportPreferences">
-    <option name="generalSettings">
-      <MavenGeneralSettings>
-        <option name="useMavenConfig" value="true" />
-      </MavenGeneralSettings>
-    </option>
-  </component>
   <component name="ProjectId" id="23Pn1h80dHlC5MVpyHsf2BS7rcJ" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -33,7 +29,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../spring_day4" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -44,6 +40,7 @@
       <option name="presentableId" value="Default" />
       <updated>1641644375778</updated>
       <workItem from="1641644376868" duration="42000" />
+      <workItem from="1642096966322" duration="128000" />
     </task>
     <servers />
   </component>

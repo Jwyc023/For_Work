@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="177922de-d5ba-4e07-9d36-b9ed8f709778" name="Changes" comment="" />
+    <list default="true" id="177922de-d5ba-4e07-9d36-b9ed8f709778" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../spring_day1/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day1/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../spring_day2/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day2/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../spring_day3/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day3/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../spring_day3/src/main/java/factorybean/Test.java" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day3/src/main/java/factorybean/Test.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../图片/2.spring的第一个环境搭建.png" beforeDir="false" afterPath="$PROJECT_DIR$/../../图片/2.spring的第一个环境搭建.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../笔记/Spring_day2.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../笔记/Spring_day2.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../笔记/Spring_day3.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../笔记/Spring_day3.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -16,13 +25,6 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="MavenImportPreferences">
-    <option name="generalSettings">
-      <MavenGeneralSettings>
-        <option name="useMavenConfig" value="true" />
-      </MavenGeneralSettings>
-    </option>
-  </component>
   <component name="ProjectId" id="23Pn79KYbrAZioCM85LE8QhsFOk" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -33,7 +35,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../Mybatis/mybatis资料/2020-12-23/代码/mybatis_day1" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../spring_day6" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -44,6 +46,7 @@
       <option name="presentableId" value="Default" />
       <updated>1641644420215</updated>
       <workItem from="1641644421352" duration="1933000" />
+      <workItem from="1642229560147" duration="3010000" />
     </task>
     <servers />
   </component>

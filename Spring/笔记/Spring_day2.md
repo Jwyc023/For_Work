@@ -1,3 +1,5 @@
+
+
 # Spring_day2
 
 ## 1.现有业务层开发存在问题
@@ -265,7 +267,7 @@ public class TestDynamicProxy {
         final UserService userService =  new UserServiceImpl();
         //参数1:当前线程类加载器
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        //参数2:
+        //参数2:这个被代理类要实现的接口数组
         Class[] classes =  new Class[]{UserService.class};
         //参数3:
         UserService userServiceProxy = (UserService) Proxy.newProxyInstance(contextClassLoader, classes, new InvocationHandler() {
@@ -286,6 +288,10 @@ public class TestDynamicProxy {
     }
 }
 ```
+
+https://blog.csdn.net/qq_28081081/article/details/80470958
+
+这个举了个更加分离的动态代理的例子，他把InvocationHandler单独写了一个类（这是个接口）。在这个类里声明一个obj类型的成员变量，然后用obj.getClass().getInterfaces()作为要传入的参数。非常分离，十分容易理解的动态理念。
 
 ----
 

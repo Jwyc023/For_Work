@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2e4ecc1f-730b-48b3-9e94-816a553dfdd3" name="Changes" comment="" />
+    <list default="true" id="2e4ecc1f-730b-48b3-9e94-816a553dfdd3" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../spring_day2/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day2/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../spring_day3/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day3/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../spring_day3/src/main/java/factorybean/Test.java" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day3/src/main/java/factorybean/Test.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../spring_day4/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../spring_day4/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../spring_day6/spring_day6.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../图片/2.spring的第一个环境搭建.png" beforeDir="false" afterPath="$PROJECT_DIR$/../../图片/2.spring的第一个环境搭建.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../笔记/Spring_day2.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../笔记/Spring_day2.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../笔记/Spring_day3.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../笔记/Spring_day3.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -15,13 +25,6 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
-  </component>
-  <component name="MavenImportPreferences">
-    <option name="generalSettings">
-      <MavenGeneralSettings>
-        <option name="useMavenConfig" value="true" />
-      </MavenGeneralSettings>
-    </option>
   </component>
   <component name="ProjectId" id="23MOJbCOZnDBQkxK7MhQKkgLmYy" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -46,6 +49,8 @@
       <workItem from="1641540421944" duration="1127000" />
       <workItem from="1641626133116" duration="626000" />
       <workItem from="1641644343430" duration="12000" />
+      <workItem from="1642072798671" duration="760000" />
+      <workItem from="1642074144120" duration="3086000" />
     </task>
     <servers />
   </component>
